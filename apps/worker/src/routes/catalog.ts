@@ -10,6 +10,11 @@ import { isoNow, newId, toIso } from "../lib/util";
 export const catalogRoutes = new Hono<AppEnv>();
 
 const id = z.string().min(10).max(64);
+/** Serviços e preços são da ORGANIZAÇÃO (valem em todas as unidades): só quem tem vínculo org-wide altera. */
+function requireOrgWideCatalog(org: OrgContext): void {
+  if (allowedUnits(org, "catalog.write") !== "all") throw forbidden();
+}
+
 const mult5 = (min: number, max: number) => z.number().int().min(min).max(max).refine((n) => n % 5 === 0, "múltiplo de 5");
 
 // ---------------- Serviços (nível da organização) ----------------
@@ -37,7 +42,7 @@ catalogRoutes.get("/services", async (c) => {
 
 catalogRoutes.post("/services", async (c) => {
   const org = c.get("org");
-  requirePerm(org, "catalog.write");
+  requireOrgWideCatalog(org);
   const b = await parseBody(c, serviceBody);
   const now = isoNow(c.get("deps").now());
   const sid = newId();
@@ -53,7 +58,7 @@ catalogRoutes.post("/services", async (c) => {
 
 catalogRoutes.patch("/services/:id", async (c) => {
   const org = c.get("org");
-  requirePerm(org, "catalog.write");
+  requireOrgWideCatalog(org);
   const b = await parseBody(c, serviceBody.partial().extend({ status: z.enum(["active", "inactive"]).optional() }).strict());
   const cols: Record<string, string | number | null | undefined> = {
     name: b.name, description: b.description, category: b.category, price_cents: b.priceCents,

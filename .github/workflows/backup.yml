@@ -1,0 +1,39 @@
+# Backup diário do D1 → arquivo criptografado → Google Drive.
+# Requer secrets (ver docs/BACKUP-RESTORE.md). Sem eles o job falha de forma explícita (não finge sucesso).
+name: Backup D1 para Google Drive
+on:
+  schedule: [{ cron: "17 6 * * *" }]
+  workflow_dispatch:
+permissions: { contents: read }
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Exportar D1
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        working-directory: apps/worker
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "CLOUDFLARE_API_TOKEN ausente"; exit 1; }
+          npx wrangler d1 export naregua-db --remote --output "$RUNNER_TEMP/dump.sql"
+      - name: Criptografar (AES-256, PBKDF2)
+        env: { BACKUP_PASSPHRASE: "${{ secrets.BACKUP_PASSPHRASE }}" }
+        run: |
+          test -n "$BACKUP_PASSPHRASE" || { echo "BACKUP_PASSPHRASE ausente"; exit 1; }
+          F="$RUNNER_TEMP/naregua-d1-$(date -u +%Y%m%dT%H%M%SZ).sql.enc"
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -in "$RUNNER_TEMP/dump.sql" -out "$F" -pass env:BACKUP_PASSPHRASE
+          echo "BACKUP_FILE=$F" >> "$GITHUB_ENV"
+          shred -u "$RUNNER_TEMP/dump.sql"
+      - name: Enviar ao Google Drive
+        env:
+          GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
+          GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
+          GDRIVE_REFRESH_TOKEN: ${{ secrets.GDRIVE_REFRESH_TOKEN }}
+          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+        run: node scripts/drive-backup.mjs "$BACKUP_FILE"

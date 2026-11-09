@@ -102,6 +102,9 @@ describe("permissões por papel (RBAC)", () => {
     expect((await api("PATCH", `${o}/units/${u2.body.id}`, { token: adm.token, body: { name: "Hack" } })).status).toBe(403);
     const units = await api("GET", `${o}/units`, { token: adm.token });
     expect(units.body.units.map((u: { id: string }) => u.id)).toEqual([S.unitId]);
+    // catálogo de serviços é da organização: admin de unidade não altera preços das outras unidades
+    expect((await api("POST", `${o}/services`, { token: adm.token, body: { name: "Hack", priceCents: 1, durationMin: 5 } })).status).toBe(403);
+    expect((await api("PATCH", `${o}/services/${S.serviceId}`, { token: adm.token, body: { priceCents: 1 } })).status).toBe(403);
     // não cria unidade (org.manage) nem convida (user.manage)
     expect((await api("POST", `${o}/units`, { token: adm.token, body: { name: "Outra", slug: uniq("o-") } })).status).toBe(403);
     expect((await api("POST", `${o}/members`, { token: adm.token, body: { email: "x@y.co", role: "barber", unitId: S.unitId } })).status).toBe(403);

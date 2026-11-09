@@ -1,0 +1,3 @@
+# Copie para apps/worker/.dev.vars (ignorado pelo git). Em produção use `wrangler secret put`.
+# Chave de teste oficial da Cloudflare que sempre aprova (só para desenvolvimento):
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
