@@ -1,0 +1,22 @@
+{
+  "name": "naregua",
+  "private": true,
+  "version": "0.1.0",
+  "description": "NaRégua — SaaS para barbearias (painel + PWA do cliente)",
+  "scripts": {
+    "test": "pnpm --filter @naregua/worker test",
+    "typecheck": "pnpm -r typecheck",
+    "build": "pnpm --filter @naregua/web build",
+    "dev:worker": "pnpm --filter @naregua/worker dev",
+    "dev:web": "pnpm --filter @naregua/web dev"
+  },
+  "packageManager": "pnpm@10.28.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "workerd",
+      "@firebase/util",
+      "protobufjs"
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "naregua-test",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [{ "binding": "DB", "database_name": "naregua-test", "database_id": "test", "migrations_dir": "migrations" }],
+  "vars": { "ENVIRONMENT": "test", "APP_NAME": "NaRégua", "FIREBASE_PROJECT_ID": "naregua-test", "TURNSTILE_SITE_KEY": "", "ALLOWED_ORIGINS": "https://app.test" }
+}
