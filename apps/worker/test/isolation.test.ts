@@ -58,6 +58,12 @@ describe("isolamento entre organizações (multi-tenant)", () => {
       ["POST", "/stock/movements", { unitId: B.unitId, productId: "qualquer-produto-existente", kind: "purchase", qty: 1 }],
       [ "GET", `/stock/levels?unitId=${B.unitId}`], ["GET", "/stock/movements"],
       ["GET", "/automation"], ["PUT", "/automation", { loyaltyPointsPerReal: 5 }], ["GET", "/outbox"],
+      // Fase 3
+      ["GET", "/chat/threads"], ["GET", "/chat/threads/qualquer-conversa-existente/messages"], ["POST", "/chat/threads/qualquer-conversa-existente/messages", { body: "x" }],
+      ["PATCH", "/chat/threads/qualquer-conversa-existente", { status: "blocked" }],
+      ["GET", "/campaigns"], ["POST", "/campaigns", { name: "Hack", subject: "Hack", body: "Hack", segment: "all_consented" }],
+      ["GET", "/campaigns/qualquer-campanha-existente/audience"], ["POST", "/campaigns/qualquer-campanha-existente/send"], ["DELETE", "/campaigns/qualquer-campanha-existente"],
+      ["GET", "/campaigns/qualquer-campanha-existente/progress"],
       ["GET", `/customers/${bCustomerId}/loyalty`], ["POST", `/customers/${bCustomerId}/loyalty/redeem`, { points: 1, note: "xx" }],
     ];
     const failures: string[] = [];

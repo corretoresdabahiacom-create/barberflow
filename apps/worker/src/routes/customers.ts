@@ -158,16 +158,18 @@ customerRoutes.get("/customers/:id/export", async (c) => {
   requirePerm(org, "org.manage");
   const cu = await loadCustomer(c.env.DB, org.id, c.req.param("id"));
   const q = (sql: string) => c.env.DB.prepare(sql).bind(org.id, cu.id).all();
-  const [appts, payments, consents] = await Promise.all([
+  const [appts, payments, consents, chat, loyalty] = await Promise.all([
     q("SELECT id, starts_at, ends_at, status, total_cents, notes FROM appointments WHERE organization_id = ? AND customer_id = ? ORDER BY starts_at"),
     q("SELECT id, method, amount_cents, received_at FROM payments WHERE organization_id = ? AND customer_id = ? ORDER BY received_at"),
     q("SELECT purpose, channel, granted, source, created_at FROM customer_consents WHERE organization_id = ? AND customer_id = ? ORDER BY created_at"),
+    q("SELECT m.sender_kind, m.body, m.created_at FROM chat_messages m JOIN chat_threads t ON t.organization_id = m.organization_id AND t.id = m.thread_id WHERE m.organization_id = ? AND t.customer_id = ? ORDER BY m.created_at"),
+    q("SELECT kind, points, note, created_at FROM loyalty_ledger WHERE organization_id = ? AND customer_id = ? ORDER BY created_at"),
   ]);
   const now = isoNow(c.get("deps").now());
   await c.env.DB.batch([auditStmt(c.env.DB, { orgId: org.id, actorUserId: c.get("user").id, action: "customer.exported", entity: "customer", entityId: cu.id, now })]);
   const { phone_norm: _p, ...safe } = cu;
   c.header("Cache-Control", "no-store");
-  return c.json({ exportedAt: now, customer: safe, appointments: appts.results, payments: payments.results, consents: consents.results });
+  return c.json({ exportedAt: now, customer: safe, appointments: appts.results, payments: payments.results, consents: consents.results, chatMessages: chat.results, loyaltyLedger: loyalty.results });
 });
 
 // LGPD: anonimização (somente proprietário). Mantém registros financeiros/agenda sem identificar a pessoa.
@@ -183,6 +185,10 @@ customerRoutes.post("/customers/:id/anonymize", async (c) => {
               status = 'anonymized', updated_at = ? WHERE organization_id = ? AND id = ?`,
     ).bind(now, org.id, cu.id),
     c.env.DB.prepare("DELETE FROM customer_accounts WHERE organization_id = ? AND customer_id = ?").bind(org.id, cu.id),
+    // LGPD: conversas do chat são apagadas (conteúdo pessoal); lançamentos financeiros e de pontos permanecem sem identificar a pessoa.
+    c.env.DB.prepare("DELETE FROM chat_messages WHERE organization_id = ? AND thread_id IN (SELECT id FROM chat_threads WHERE organization_id = ? AND customer_id = ?)").bind(org.id, org.id, cu.id),
+    c.env.DB.prepare("DELETE FROM chat_threads WHERE organization_id = ? AND customer_id = ?").bind(org.id, cu.id),
+    c.env.DB.prepare("UPDATE outbox SET to_email = 'removido', subject = '', body = '', status = CASE WHEN status = 'pending' THEN 'skipped' ELSE status END WHERE organization_id = ? AND customer_id = ?").bind(org.id, cu.id),
     c.env.DB.prepare("UPDATE appointments SET notes = NULL, cancel_token_hash = NULL, updated_at = ? WHERE organization_id = ? AND customer_id = ?").bind(now, org.id, cu.id),
     auditStmt(c.env.DB, { orgId: org.id, actorUserId: c.get("user").id, action: "customer.anonymized", entity: "customer", entityId: cu.id, now }),
   ]);

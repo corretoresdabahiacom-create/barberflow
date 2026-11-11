@@ -13,7 +13,7 @@ export function Settings() {
 
 function UnitCard({ unit, editable }: { unit: UnitInfo; editable: boolean }) {
   const { orgId, reloadUnits } = useAdmin();
-  const [f, setF] = useState({ name: unit.name, address: unit.address ?? "", phone: unit.phone ?? "", autoConfirm: unit.auto_confirm === 1, minNoticeMin: unit.min_notice_min, maxDaysAhead: unit.max_days_ahead, slotStepMin: unit.slot_step_min, cancelWindowMin: unit.cancel_window_min });
+  const [f, setF] = useState({ name: unit.name, address: unit.address ?? "", phone: unit.phone ?? "", autoConfirm: unit.auto_confirm === 1, minNoticeMin: unit.min_notice_min, maxDaysAhead: unit.max_days_ahead, slotStepMin: unit.slot_step_min, cancelWindowMin: unit.cancel_window_min, city: unit.city ?? "", state: unit.state ?? "", description: unit.description ?? "", listed: unit.listed === 1 });
   const [qr, setQr] = useState("");
   const [saved, setSaved] = useState(false);
   const { busy, error, run } = useAsync();
@@ -36,9 +36,13 @@ function UnitCard({ unit, editable }: { unit: UnitInfo; editable: boolean }) {
         <Field label="Intervalo da agenda"><Select disabled={!editable} value={f.slotStepMin} onChange={(e) => setF({ ...f, slotStepMin: Number(e.target.value) })}>{[10, 15, 20, 30, 60].map((m) => <option key={m} value={m}>{m} min</option>)}</Select></Field>
         <Field label="Antecedência mínima (min)"><Input type="number" min={0} disabled={!editable} value={f.minNoticeMin} onChange={(e) => setF({ ...f, minNoticeMin: Number(e.target.value) })} /></Field>
         <Field label="Cancelamento até (min antes)"><Input type="number" min={0} disabled={!editable} value={f.cancelWindowMin} onChange={(e) => setF({ ...f, cancelWindowMin: Number(e.target.value) })} /></Field>
+        <Field label="Cidade"><Input disabled={!editable} value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })} /></Field>
+        <Field label="UF"><Input disabled={!editable} maxLength={2} value={f.state} onChange={(e) => setF({ ...f, state: e.target.value.toUpperCase() })} /></Field>
+        <div className="sm:col-span-2"><Field label="Descrição pública (até 300 caracteres)"><Input disabled={!editable} maxLength={300} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} /></Field></div>
+        <label className="flex min-h-11 items-center gap-2 sm:col-span-2"><input type="checkbox" className="size-5" disabled={!editable} checked={f.listed} onChange={(e) => setF({ ...f, listed: e.target.checked })} /> Aparecer na página “Encontrar uma barbearia” (exige cidade e UF)</label>
         <Field label="Agenda aberta por (dias)"><Input type="number" min={1} max={365} disabled={!editable} value={f.maxDaysAhead} onChange={(e) => setF({ ...f, maxDaysAhead: Number(e.target.value) })} /></Field>
       </div>
-      {editable && <Button disabled={busy} onClick={async () => { setSaved(false); const r = await run(() => api(orgPath(orgId, `/units/${unit.id}`), { method: "PATCH", auth: true, body: { name: f.name, address: f.address || null, phone: f.phone || null, autoConfirm: f.autoConfirm, minNoticeMin: f.minNoticeMin, maxDaysAhead: f.maxDaysAhead, slotStepMin: f.slotStepMin, cancelWindowMin: f.cancelWindowMin } })); if (r) { setSaved(true); await reloadUnits(); } }}>Salvar</Button>}
+      {editable && <Button disabled={busy} onClick={async () => { setSaved(false); const r = await run(() => api(orgPath(orgId, `/units/${unit.id}`), { method: "PATCH", auth: true, body: { name: f.name, address: f.address || null, phone: f.phone || null, autoConfirm: f.autoConfirm, minNoticeMin: f.minNoticeMin, maxDaysAhead: f.maxDaysAhead, slotStepMin: f.slotStepMin, cancelWindowMin: f.cancelWindowMin, city: f.city.trim() || null, state: f.state.trim() || null, description: f.description.trim() || null, listed: f.listed } })); if (r) { setSaved(true); await reloadUnits(); } }}>Salvar</Button>}
     </Card>
   );
 }

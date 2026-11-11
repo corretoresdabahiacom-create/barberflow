@@ -1,3 +1,5 @@
+import { Discover } from "./pages/Discover";
+import { Unsubscribe } from "./pages/Unsubscribe";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { InstallBanner } from "./components/InstallBanner";
 import { AdminApp } from "./pages/admin/Admin";
@@ -17,6 +19,8 @@ export function App() {
         <Route path="/agendamento/:id" element={<ManageAppointment />} />
         <Route path="/c" element={<CustomerPortal />} />
         <Route path="/app/*" element={<AdminApp />} />
+        <Route path="/descobrir" element={<Discover />} />
+        <Route path="/sair" element={<Unsubscribe />} />
         <Route path="/termos" element={<Terms />} />
         <Route path="/privacidade" element={<Privacy />} />
         <Route path="*" element={<Navigate to="/" replace />} />

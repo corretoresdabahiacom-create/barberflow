@@ -17,6 +17,10 @@
 | SQL injection | Somente `bind`; varredura confere que `${}` em SQL só monta placeholders/colunas fixas |
 | Financeiro/estoque/fidelidade (Fase 2) | `Idempotency-Key` obrigatória; lançamentos append-only por trigger; correção só por estorno/ajuste; inserts condicionais atômicos (saldo de estoque e de pontos nunca negativo, mesmo com concorrência — testado); permissões por unidade; comissão do profissional só a própria |
 | Lembretes por e-mail | desligado por padrão (organização + provedor); só para cliente com e-mail e **sem opt-out vigente**; um por agendamento (`dedupe_key`); corpo sem telefone e sem token; tentativas limitadas; fila visível só ao dono |
+| Vitrine pública | opt-in por unidade (`listed`, exige cidade/UF); só campos de divulgação (sem telefone nem IDs); limite por IP; parâmetros validados |
+| Chat | só cliente com vínculo verificado **e** agendamento na unidade; equipe por permissão/unidade; limites de 20 (cliente) e 60 (equipe) msgs/10 min; mensagens ≤ 1000 caracteres, imutáveis; bloqueio pela equipe; apagado na anonimização |
+| Marketing | opt-in explícito vigente (sem registro = não recebe), rechecado no envio; link de descadastro assinado (HMAC-SHA256) + `List-Unsubscribe`; teto de 200/dia/organização; só o proprietário; reivindicação atômica contra envio duplo |
+| Web Push | criptografia aes128gcm validada contra o vetor do RFC 8291; JWT VAPID ES256; **allowlist de hosts** (FCM, Mozilla, Apple, WNS) — o Worker nunca chama URL arbitrária do usuário (SSRF); máx. 10 aparelhos/conta; payload sem dados sensíveis (nome + trecho); falha de push não afeta a operação |
 | Vazamento por erro | Handler global devolve mensagem genérica; detalhes só no log |
 | Segredos | Nenhum no repositório; Turnstile secret via `wrangler secret`; `.dev.vars` ignorado |
 
@@ -25,5 +29,6 @@
 - **CPU de 10 ms** do plano Free não foi medida (só em produção). A verificação RSA é a operação mais cara por requisição.
 - Nenhum teste de carga, pentest ou revisão externa foi feito.
 - Firebase, Turnstile e Google Drive **não foram exercitados contra os serviços reais** (sem credenciais).
+- Chat por polling (sem WebSocket) consome leituras do D1; push é melhor esforço, sem retry. Mensagens de chat **não são criptografadas de ponta a ponta** (a barbearia e o operador do sistema podem lê-las) — dizer isso ao usuário.
 - Sem MFA nesta fase (Firebase suporta; não configurado).
 - D1 remoto não foi testado: atomicidade de `batch()` foi comprovada somente no emulador local.

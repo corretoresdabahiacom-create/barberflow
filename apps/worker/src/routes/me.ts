@@ -6,6 +6,7 @@ import { cancelAppointment, createAppointment, getAppointment, rescheduleAppoint
 import { audit } from "../lib/audit";
 import { HttpError, notFound, parseBody } from "../lib/http";
 import { isoNow, newId } from "../lib/util";
+import { meExtraRoutes } from "./meExtra";
 import { loadPublicUnit } from "./public";
 
 export const meRoutes = new Hono<AppEnv>();
@@ -238,3 +239,4 @@ meRoutes.post("/units/:slug/appointments", async (c) => {
   return c.json({ appointment: appt }, 201);
 });
 
+meRoutes.route("/", meExtraRoutes);

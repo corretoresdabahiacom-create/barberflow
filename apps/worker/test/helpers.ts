@@ -66,7 +66,15 @@ export async function signToken(o: TokenOpts): Promise<string> {
 /** Remetente falso controlável: registra envios e falha sob demanda. */
 export const mailer = {
   enabled: true,
-  sent: [] as { to: string; subject: string; body: string }[],
+  sent: [] as { to: string; subject: string; body: string; unsubscribeUrl?: string | null }[],
+  failWith: null as string | null,
+};
+
+/** Web Push falso: registra envios; `gone` simula assinatura expirada. */
+export const pusher = {
+  enabled: true,
+  sent: [] as { endpoint: string; payload: string }[],
+  goneEndpoints: new Set<string>(),
   failWith: null as string | null,
 };
 
@@ -76,6 +84,15 @@ export const testDeps: AppDeps = {
     verifyIdTokenWith(token, PROJECT, async (kid) => (kid === KID ? publicJwk : null), Math.floor(clock.ms / 1000)),
   verifyTurnstile: async (token) => token === "turnstile-ok",
   now: () => new Date(clock.ms),
+  push: {
+    enabled: () => pusher.enabled,
+    send: async (sub, payload) => {
+      if (pusher.failWith) throw new Error(pusher.failWith);
+      if (pusher.goneEndpoints.has(sub.endpoint)) return "gone";
+      pusher.sent.push({ endpoint: sub.endpoint, payload });
+      return "ok";
+    },
+  },
   email: {
     enabled: () => mailer.enabled,
     send: async (m) => {
@@ -93,6 +110,10 @@ export function reset(): void {
   mailer.enabled = true;
   mailer.sent = [];
   mailer.failWith = null;
+  pusher.enabled = true;
+  pusher.sent = [];
+  pusher.goneEndpoints = new Set();
+  pusher.failWith = null;
   clock.ms = Date.UTC(2026, 10, 6, 15, 0, 0);
 }
 
@@ -201,3 +222,14 @@ export async function completeAppt(shop: Shop, apptId: string): Promise<Res> {
 
 export const apptCustomerId = async (apptId: string): Promise<string> =>
   (await E.DB.prepare("SELECT customer_id AS c FROM appointments WHERE id = ?").bind(apptId).first<{ c: string }>())!.c;
+
+/** Cliente com login (e-mail verificado) vinculado ao cadastro criado por um agendamento administrativo. */
+export async function bookedCustomer(shop: Shop, opts: { hour?: number; phone?: string; name?: string } = {}) {
+  const uid = uniq("cli-");
+  const email = `${uid}@teste.local`;
+  const token = await signToken({ uid, email });
+  const appt = await adminBook(shop, tue(opts.hour ?? 10), { customer: { name: opts.name ?? "Cliente Chat", phone: opts.phone ?? "71955554444", email } });
+  if (appt.status !== 201) throw new Error(`bookedCustomer: ${appt.status} ${JSON.stringify(appt.body)}`);
+  await api("GET", "/api/me", { token }); // vincula por e-mail verificado
+  return { token, uid, email, apptId: appt.body.appointment.id as string, customerId: await apptCustomerId(appt.body.appointment.id) };
+}

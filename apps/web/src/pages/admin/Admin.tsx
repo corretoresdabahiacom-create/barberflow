@@ -8,6 +8,9 @@ import { Agenda } from "./Agenda";
 import { Professionals, Services } from "./Catalog";
 import { AdminContext, orgPath, type UnitInfo } from "./ctx";
 import { Automation } from "./Automation";
+import { Chat } from "./Chat";
+import { Marketing } from "./Marketing";
+import { PushToggle } from "../../components/PushToggle";
 import { Finance } from "./Finance";
 import { Customers, Team } from "./People";
 import { Stock } from "./Stock";
@@ -72,7 +75,7 @@ function Panel({ orgs }: { orgs: [string, string][] }) {
   useEffect(() => { setUnits(null); setPerms(null); void reloadUnits(); }, [reloadUnits]);
 
   const ctx = useMemo(() => units && perms ? { orgId, orgName, units, perms, can: (p: string) => perms.has(p), reloadUnits } : null, [orgId, orgName, units, perms, reloadUnits]);
-  const tabs: [string, string, string?][] = [["agenda", "Agenda"], ["profissionais", "Equipe de trabalho", "catalog.read"], ["servicos", "Serviços", "catalog.read"], ["clientes", "Clientes", "customer.read"], ["acessos", "Acessos", "user.manage"], ["relatorios", "Relatórios", "report.read"], ["financeiro", "Financeiro", "finance.read"], ["estoque", "Estoque", "stock.read"], ["automacao", "Automação", "org.manage"], ["avisos", "Avisos"], ["ajustes", "Ajustes", "agenda.read"]];
+  const tabs: [string, string, string?][] = [["agenda", "Agenda"], ["profissionais", "Equipe de trabalho", "catalog.read"], ["servicos", "Serviços", "catalog.read"], ["clientes", "Clientes", "customer.read"], ["acessos", "Acessos", "user.manage"], ["relatorios", "Relatórios", "report.read"], ["financeiro", "Financeiro", "finance.read"], ["estoque", "Estoque", "stock.read"], ["conversas", "Conversas", "chat.read"], ["campanhas", "Campanhas", "marketing.manage"], ["automacao", "Automação", "org.manage"], ["avisos", "Avisos"], ["ajustes", "Ajustes", "agenda.read"]];
 
   return (
     <div className="mx-auto max-w-3xl px-4 pb-24 pt-[max(1rem,env(safe-area-inset-top))]">
@@ -103,6 +106,8 @@ function Panel({ orgs }: { orgs: [string, string][] }) {
             <Route path="relatorios" element={<Reports />} />
             <Route path="financeiro" element={<Finance />} />
             <Route path="estoque" element={<Stock />} />
+            <Route path="conversas" element={<Chat />} />
+            <Route path="campanhas" element={<Marketing />} />
             <Route path="automacao" element={<Automation />} />
             <Route path="avisos" element={<Notifications />} />
             <Route path="ajustes" element={<Settings />} />
@@ -126,7 +131,8 @@ function Notifications() {
       {!d ? <Spinner /> : d.notifications.length === 0 ? <Notice>Sem avisos.</Notice> : d.notifications.map((n) => (
         <Card key={n.id} className={n.read_at ? "opacity-60" : ""}><div className="font-medium">{n.title}</div><div className="text-sm text-mute">{n.body}</div><div className="text-xs text-mute">{fmtDateTime(n.created_at)}</div></Card>
       ))}
-      <p className="text-xs text-mute">Avisos internos do painel. Notificações push, e-mail e WhatsApp ainda não estão ativas.</p>
+      <PushToggle />
+      <p className="text-xs text-mute">Avisos internos do painel. WhatsApp não está disponível; e-mail e push dependem de configuração no servidor.</p>
     </div>
   );
 }

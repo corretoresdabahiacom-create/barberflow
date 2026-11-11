@@ -13,6 +13,7 @@ const TENANT = [
   "units", "memberships", "professionals", "professional_units", "services", "professional_services", "schedules", "time_blocks",
   "customers", "customer_consents", "appointments", "appointment_items", "appointment_slots", "appointment_history", "payments", "audit_logs",
   "expenses", "commission_rules", "commission_entries", "cash_sessions", "products", "stock_movements", "loyalty_ledger", "outbox",
+  "chat_threads", "chat_messages", "campaigns",
 ];
 
 interface Stmt { file: string; line: number; sql: string; lineText: string }
@@ -71,7 +72,7 @@ describe("varredura estática de SQL (tenant)", () => {
         if (/\.map\(\(\) => "\?"\)\.join/.test(expr)) continue;
         if (/^(where|set|unitFilter|unitFilter\.replaceAll\(.*\)|scope|entries\.map.*|values|marks)\b/.test(expr)) continue;
         // Fase 2: fragmentos auditados — unitScope() só emite colunas fixas + placeholders; os demais são literais do código.
-        if (/^(sc\.sql|sp\.sql|EXPECTED_SQL|EXP_COLS|conflict|prod)$/.test(expr)) continue;
+        if (/^(sc\.sql|sp\.sql|EXPECTED_SQL|EXP_COLS|conflict|prod|COLS|a\.from)$/.test(expr)) continue;
         if (/^(where\.join|scope\.join|entries\.map|ids\.map|readUnits\.map|ownUnits\.map|allowed\.map)/.test(expr)) continue;
         risky.push(`${s.file}:${s.line} \${${expr}}`);
       }

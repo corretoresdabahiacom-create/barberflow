@@ -19,6 +19,10 @@ npx wrangler secret put TURNSTILE_SECRET_KEY
 ```
 Lembretes por e-mail (opcional, Fase 2): `npx wrangler secret put EMAIL_API_KEY` e definir `EMAIL_FROM` em `vars` (remetente verificado no provedor; o código usa o formato da API do Resend). O cron `*/15 * * * *` já está em `wrangler.jsonc`. Sem esses dois valores o recurso fica inerte. Depois, o proprietário liga em Painel → Automação. **Nunca testado com provedor real.**
 
+Web Push (opcional, Fase 3): `node scripts/gen-vapid.mjs`; `npx wrangler secret put VAPID_PRIVATE_KEY`; `VAPID_PUBLIC_KEY` e `VAPID_SUBJECT` (ex.: `mailto:contato@seudominio.com.br`) em `vars`. O front busca a chave pública pela API — não há variável `VITE_`. **Nunca testado contra FCM/Mozilla/Apple.**
+
+Campanhas (opcional): além do e-mail acima, `npx wrangler secret put UNSUBSCRIBE_SECRET` (string longa e aleatória; **trocá-la invalida os links de descadastro já enviados** — não troque depois de enviar) e `PUBLIC_BASE_URL` (`https://seu-host`) em `vars`.
+
 Turnstile: dashboard → Turnstile → novo widget (modo gerenciado) → `site key` em `TURNSTILE_SITE_KEY` (wrangler.jsonc vars) **e** `VITE_TURNSTILE_SITE_KEY` (front); `secret key` só via `wrangler secret`.
 
 ## 3. Build e deploy

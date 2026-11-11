@@ -24,6 +24,9 @@ export const PERMISSIONS = [
   "finance.write",
   "stock.read",
   "stock.write",
+  "chat.read",
+  "chat.write",
+  "marketing.manage",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -43,6 +46,8 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     "finance.write",
     "stock.read",
     "stock.write",
+    "chat.read",
+    "chat.write",
   ],
   manager: [
     "catalog.read",
@@ -53,6 +58,8 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     "report.read",
     "stock.read",
     "stock.write",
+    "chat.read",
+    "chat.write",
   ],
   barber: ["catalog.read", "agenda.read_own", "agenda.write_own"],
 };
@@ -62,6 +69,7 @@ export const ORG_LEVEL_PERMISSIONS: readonly Permission[] = [
   "org.manage",
   "user.manage",
   "audit.read",
+  "marketing.manage",
 ];
 
 export const APPOINTMENT_STATUSES = [

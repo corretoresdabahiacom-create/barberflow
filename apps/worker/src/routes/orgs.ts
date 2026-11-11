@@ -15,6 +15,8 @@ import { reportRoutes } from "./reports";
 import { financeRoutes } from "./finance";
 import { stockRoutes } from "./stock";
 import { loyaltyRoutes } from "./loyalty";
+import { chatRoutes } from "./chat";
+import { marketingRoutes } from "./marketing";
 
 export const orgRoutes = new Hono<AppEnv>();
 orgRoutes.use("*", requireAuth);
@@ -117,7 +119,7 @@ scoped.get("/units", async (c) => {
     else unitsAllowed.add(m.unit_id);
   }
   const { results } = await c.env.DB.prepare(
-    `SELECT id, name, slug, address, phone, timezone, status, auto_confirm, min_notice_min, max_days_ahead, slot_step_min, cancel_window_min
+    `SELECT id, name, slug, address, phone, timezone, status, auto_confirm, min_notice_min, max_days_ahead, slot_step_min, cancel_window_min, city, state, description, listed
        FROM units WHERE organization_id = ? ORDER BY name`,
   )
     .bind(org.id)
@@ -159,6 +161,10 @@ const unitPatch = z
     maxDaysAhead: z.number().int().min(1).max(365),
     slotStepMin: z.union([z.literal(5), z.literal(10), z.literal(15), z.literal(20), z.literal(30), z.literal(60)]),
     cancelWindowMin: z.number().int().min(0).max(10080),
+    city: z.string().trim().min(2).max(80).nullable(),
+    state: z.string().trim().length(2).regex(/^[A-Za-z]{2}$/).transform((v) => v.toUpperCase()).nullable(),
+    description: z.string().trim().max(300).nullable(),
+    listed: z.boolean(),
   })
   .partial()
   .strict(); // slug propositalmente ausente: imutável (QR Code estável)
@@ -173,9 +179,18 @@ scoped.patch("/units/:unitId", async (c) => {
     auto_confirm: body.autoConfirm === undefined ? undefined : body.autoConfirm ? 1 : 0,
     min_notice_min: body.minNoticeMin, max_days_ahead: body.maxDaysAhead, slot_step_min: body.slotStepMin,
     cancel_window_min: body.cancelWindowMin,
+    city: body.city, state: body.state, description: body.description,
+    listed: body.listed === undefined ? undefined : body.listed ? 1 : 0,
   };
   const entries = Object.entries(cols).filter(([, v]) => v !== undefined) as [string, string | number | null][];
   if (entries.length === 0) throw new HttpError(400, "validation_error", "Nada para atualizar");
+  // Vitrine: para aparecer na listagem pública a unidade precisa informar cidade e UF (e continuar ativa).
+  const cur = await c.env.DB.prepare("SELECT city, state, listed, status FROM units WHERE organization_id = ? AND id = ?").bind(org.id, unitId).first<{ city: string | null; state: string | null; listed: number; status: string }>();
+  if (!cur) throw notFound();
+  const willList = body.listed === undefined ? cur.listed === 1 : body.listed;
+  const city = body.city === undefined ? cur.city : body.city;
+  const state = body.state === undefined ? cur.state : body.state;
+  if (willList && (!city || !state)) throw new HttpError(400, "validation_error", "Para aparecer na vitrine, informe cidade e UF");
   const now = isoNow(c.get("deps").now());
   const set = entries.map(([k]) => `${k} = ?`).join(", ");
   const res = await c.env.DB.batch([
@@ -301,6 +316,8 @@ scoped.route("/", reportRoutes);
 scoped.route("/", financeRoutes);
 scoped.route("/", stockRoutes);
 scoped.route("/", loyaltyRoutes);
+scoped.route("/", chatRoutes);
+scoped.route("/", marketingRoutes);
 
 orgRoutes.route("/:orgId", scoped);
 

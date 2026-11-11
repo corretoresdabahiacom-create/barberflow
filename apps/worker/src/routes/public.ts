@@ -7,7 +7,8 @@ import { cancelAppointment, createAppointment, resolveBooking, type AppointmentR
 import { consentStmts, findOrCreateCustomer } from "../domain/customers";
 import { HttpError, notFound, parseBody, parseQuery, rateLimit } from "../lib/http";
 import { isValidDateStr } from "../lib/time";
-import { randomToken, safeEqual, sha256Hex, toIso } from "../lib/util";
+import { randomToken, safeEqual, sha256Hex, toIso, isoNow, newId } from "../lib/util";
+import { verifyUnsubToken } from "../lib/unsub";
 
 export const publicRoutes = new Hono<AppEnv>();
 
@@ -206,5 +207,56 @@ publicRoutes.post("/appointments/:id/cancel", async (c) => {
     db: c.env.DB, appt, by: "customer", actorUserId: null, reason: body.reason, nowMs: deps.now().getTime(),
     windowMin: unit?.cancel_window_min ?? 120, ip: ipOf(c),
   });
+  return c.json({ ok: true });
+});
+
+// ---------------- Vitrine (descoberta) ----------------
+// Somente unidades que o proprietário/admin ligou (`listed`), e só campos escolhidos para divulgação.
+// Sem ranking pago e sem avaliações nesta fase: ordem alfabética.
+publicRoutes.get("/discover", async (c) => {
+  const q = parseQuery(c, z.object({
+    q: z.string().trim().max(60).optional(),
+    state: z.string().trim().length(2).regex(/^[A-Za-z]{2}$/).optional(),
+    city: z.string().trim().max(80).optional(),
+    limit: z.coerce.number().int().min(1).max(50).default(24),
+    offset: z.coerce.number().int().min(0).max(5000).default(0),
+  }));
+  rateLimit(`discover:${ipOf(c)}`, 60, 60_000, c.get("deps").now().getTime());
+  const where: string[] = ["u.listed = 1", "u.status = 'active'", "o.status = 'active'", "u.city IS NOT NULL", "u.state IS NOT NULL"];
+  const binds: (string | number)[] = [];
+  if (q.state) { where.push("u.state = ?"); binds.push(q.state.toUpperCase()); }
+  if (q.city) { where.push("LOWER(u.city) = LOWER(?)"); binds.push(q.city); }
+  if (q.q) { where.push("(LOWER(u.name) LIKE ? OR LOWER(o.name) LIKE ?)"); const like = `%${q.q.toLowerCase().replace(/[%_]/g, "")}%`; binds.push(like, like); }
+  const { results } = await c.env.DB.prepare(
+    `SELECT u.slug, u.name AS unit_name, o.name AS organization_name, u.city, u.state, u.address, u.description
+       FROM units u JOIN organizations o ON o.id = u.organization_id
+      WHERE ${where.join(" AND ")} ORDER BY o.name, u.name LIMIT ? OFFSET ?`,
+  ).bind(...binds, q.limit, q.offset).all();
+  c.header("Cache-Control", "public, max-age=60");
+  return c.json({ units: results });
+});
+
+// ---------------- Descadastro de marketing (1 clique, sem login) ----------------
+// Aceita token na query (cabeçalho List-Unsubscribe-Post dos provedores de e-mail) ou no corpo JSON (página /sair).
+publicRoutes.post("/unsubscribe", async (c) => {
+  rateLimit(`unsub:${ipOf(c)}`, 30, 60_000, c.get("deps").now().getTime());
+  const secret = c.env.UNSUBSCRIBE_SECRET;
+  if (!secret) throw new HttpError(503, "unavailable", "Indisponível");
+  let token = c.req.query("t") ?? "";
+  if (!token) {
+    const b = await c.req.json().catch(() => null);
+    if (b && typeof b === "object" && typeof (b as { token?: unknown }).token === "string") token = (b as { token: string }).token;
+  }
+  const who = token.length > 0 && token.length < 400 ? await verifyUnsubToken(secret, token) : null;
+  if (!who) throw new HttpError(400, "invalid_token", "Link de descadastro inválido");
+  const now = isoNow(c.get("deps").now());
+  // Só registra se o cliente existir nesta organização e o estado vigente ainda for "autorizado" (idempotente).
+  await c.env.DB.prepare(
+    `INSERT INTO customer_consents (id, organization_id, customer_id, purpose, channel, granted, source, created_at)
+     SELECT ?, c.organization_id, c.id, 'marketing', 'email', 0, 'unsubscribe_link', ?
+       FROM customers c
+      WHERE c.organization_id = ? AND c.id = ?
+        AND COALESCE((SELECT k.granted FROM customer_consents k WHERE k.organization_id = c.organization_id AND k.customer_id = c.id AND k.purpose = 'marketing' AND k.channel = 'email' ORDER BY k.created_at DESC, k.rowid DESC LIMIT 1), 0) = 1`,
+  ).bind(newId(), now, who.orgId, who.customerId).run();
   return c.json({ ok: true });
 });

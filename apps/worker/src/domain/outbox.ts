@@ -89,9 +89,9 @@ export async function dispatchOutbox(db: D1Database, env: Env, deps: AppDeps, no
   const out: DispatchResult = { sent: 0, retried: 0, failed: 0, skipped: 0 };
   const now = isoNow(new Date(nowMs));
   const { results } = await db
-    .prepare("SELECT id, to_email, subject, body, attempts, appointment_id, organization_id FROM outbox WHERE status = 'pending' AND next_attempt_at <= ? ORDER BY next_attempt_at LIMIT ?") // tenant-ok: fila global processada pelo cron; cada linha carrega organization_id
+    .prepare("SELECT id, to_email, subject, body, attempts, appointment_id, organization_id, kind, customer_id, unsubscribe_url FROM outbox WHERE status = 'pending' AND next_attempt_at <= ? ORDER BY next_attempt_at LIMIT ?") // tenant-ok: fila global processada pelo cron; cada linha carrega organization_id
     .bind(now, SEND_BATCH)
-    .all<{ id: string; to_email: string; subject: string; body: string; attempts: number; appointment_id: string | null; organization_id: string }>();
+    .all<{ id: string; to_email: string; subject: string; body: string; attempts: number; appointment_id: string | null; organization_id: string; kind: string; customer_id: string | null; unsubscribe_url: string | null }>();
 
   for (const m of results) {
     // lease: só quem conseguir avançar next_attempt_at processa esta mensagem
@@ -113,8 +113,23 @@ export async function dispatchOutbox(db: D1Database, env: Env, deps: AppDeps, no
         continue;
       }
     }
+    if (m.kind === "campaign" && m.customer_id) {
+      // o cliente pode ter se descadastrado depois do enfileiramento: o consentimento vigente é rechecado no envio
+      const consent = await db
+        .prepare(
+          `SELECT granted FROM customer_consents WHERE organization_id = ? AND customer_id = ? AND purpose = 'marketing' AND channel = 'email'
+            ORDER BY created_at DESC, rowid DESC LIMIT 1`,
+        )
+        .bind(m.organization_id, m.customer_id)
+        .first<{ granted: number }>();
+      if (consent?.granted !== 1) {
+        await db.prepare("UPDATE outbox SET status = 'skipped', last_error = 'consent_revoked' WHERE id = ?").bind(m.id).run(); // tenant-ok: chave primária da fila
+        out.skipped++;
+        continue;
+      }
+    }
     try {
-      await deps.email.send({ to: m.to_email, subject: m.subject, body: m.body }, env);
+      await deps.email.send({ to: m.to_email, subject: m.subject, body: m.body, unsubscribeUrl: m.unsubscribe_url }, env);
       await db.prepare("UPDATE outbox SET status = 'sent', sent_at = ?, last_error = NULL WHERE id = ?").bind(now, m.id).run(); // tenant-ok: chave primária da fila
       out.sent++;
     } catch (e) {

@@ -1,7 +1,8 @@
 import { createApp } from "./app";
 import { verifyFirebaseToken } from "./auth/firebase";
 import { runScheduled } from "./domain/outbox";
-import type { AppDeps, EmailSender, Env } from "./env";
+import type { AppDeps, EmailSender, Env, PushSender } from "./env";
+import { encryptPayload, vapidAuthHeader } from "./lib/webpush";
 
 /** Cloudflare Turnstile. Falha FECHADA: sem segredo configurado, nenhuma reserva pública é aceita. */
 async function verifyTurnstile(token: string | undefined, ip: string | null, env: Env): Promise<boolean> {
@@ -30,9 +31,29 @@ const email: EmailSender = {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { authorization: `Bearer ${env.EMAIL_API_KEY}`, "content-type": "application/json" },
-      body: JSON.stringify({ from: env.EMAIL_FROM, to: [msg.to], subject: msg.subject, text: msg.body }),
+      body: JSON.stringify({
+        from: env.EMAIL_FROM, to: [msg.to], subject: msg.subject, text: msg.body,
+        ...(msg.unsubscribeUrl ? { headers: { "List-Unsubscribe": `<${msg.unsubscribeUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } } : {}),
+      }),
     });
     if (!res.ok) throw new Error(`email_provider_${res.status}`);
+  },
+};
+
+/** Web Push direto aos serviços de push (FCM/Mozilla/Apple/WNS). NUNCA testado contra um serviço real. */
+const push: PushSender = {
+  enabled: (env) => Boolean(env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY && env.VAPID_SUBJECT),
+  send: async (sub, payload, env) => {
+    const body = await encryptPayload(new TextEncoder().encode(payload), sub.p256dh, sub.auth);
+    const authorization = await vapidAuthHeader(sub.endpoint, env.VAPID_SUBJECT!, env.VAPID_PUBLIC_KEY!, env.VAPID_PRIVATE_KEY!, Math.floor(Date.now() / 1000));
+    const res = await fetch(sub.endpoint, {
+      method: "POST",
+      headers: { authorization, "content-encoding": "aes128gcm", "content-type": "application/octet-stream", ttl: "3600", urgency: "normal" },
+      body,
+    });
+    if (res.status === 404 || res.status === 410) return "gone";
+    if (!res.ok) throw new Error(`push_service_${res.status}`);
+    return "ok";
   },
 };
 
@@ -41,6 +62,7 @@ const deps: AppDeps = {
   verifyTurnstile,
   now: () => new Date(),
   email,
+  push,
 };
 
 const app = createApp(deps);

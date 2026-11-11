@@ -2,7 +2,7 @@
 
 SaaS de agenda e gestão para barbearias: **painel administrativo** + **PWA do cliente** (reserva por QR Code/link, sem baixar app).
 
-> Estado atual: **Fases 1 e 2 implementadas e testadas localmente. Nada foi publicado (deploy não realizado).** Veja [PROJECT_STATUS.md](PROJECT_STATUS.md) — fonte da verdade sobre o que existe, o que foi testado e o que falta.
+> Estado atual: **Fases 1, 2 e 3 implementadas e testadas localmente. Nada foi publicado (deploy não realizado).** Veja [PROJECT_STATUS.md](PROJECT_STATUS.md) — fonte da verdade sobre o que existe, o que foi testado e o que falta.
 
 ## Stack (100% plano gratuito para começar)
 | Camada | Tecnologia |
@@ -26,7 +26,7 @@ scripts/      envio de backup ao Google Drive
 ## Rodar localmente
 ```bash
 corepack enable && pnpm install
-pnpm test                 # 116 testes da API (workerd + D1 local)
+pnpm test                 # 156 testes da API (workerd + D1 local)
 pnpm typecheck && pnpm build
 cd apps/worker && pnpm db:migrate:local
 # terminal 1:  pnpm dev:worker      (http://localhost:8787, serve também o front buildado)

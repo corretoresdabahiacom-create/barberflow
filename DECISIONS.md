@@ -47,3 +47,15 @@ Esperado = abertura + pagamentos `cash` da unidade na janela − despesas `cash`
 ## ADR-015 — Fidelidade simples, sem cupons
 Pontos = reais inteiros do total × taxa da organização (0 = desligada), concedidos uma única vez na conclusão; resgate manual atômico. Cupons ficaram fora da Fase 2.
 
+## ADR-016 — Vitrine é opt-in e simples
+`listed` desligado por padrão; só nome, cidade/UF, endereço e descrição escolhidos pela barbearia. Sem avaliações (exigem moderação e política), sem ranking pago, sem mapa/geolocalização (precisaria de geocodificação/API externa).
+
+## ADR-017 — Chat por polling, sem Durable Objects
+Mais simples e dentro do plano gratuito; custo em leituras cresce com conversas abertas. Push avisa quando a aba está fechada. Migrar para WebSocket/DO se o uso justificar. Não é criptografado de ponta a ponta.
+
+## ADR-018 — Marketing só com opt-in vigente, rechecado no envio
+Sem registro de consentimento = não recebe (diferente dos lembretes de serviço, que são opt-out). Descadastro de 1 clique com token HMAC sem expiração; segredo trocado invalida links antigos. Teto diário por organização.
+
+## ADR-019 — Web Push próprio com WebCrypto
+Sem biblioteca externa (compatível com Workers). Criptografia validada pelo vetor do RFC 8291. Endpoints restritos a uma allowlist de serviços de push (anti-SSRF). Envio melhor-esforço em segundo plano, sem outbox/retry: o aviso interno e o chat são a fonte da verdade.
+

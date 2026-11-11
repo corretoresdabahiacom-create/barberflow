@@ -1,7 +1,7 @@
 // Service worker NaRégua — mínimo e seguro.
 // Regras: (1) NUNCA intercepta /api (dados privados e de agenda são sempre da rede);
 // (2) guarda apenas o "casco" estático do app para abrir offline; (3) sem dados de usuário em cache.
-const VERSION = "v1";
+const VERSION = "v2";
 const SHELL = `naregua-shell-${VERSION}`;
 
 self.addEventListener("install", (e) => {
@@ -36,4 +36,24 @@ self.addEventListener("fetch", (e) => {
       }),
     );
   }
+});
+
+// ---- Web Push ----
+// Mostra o aviso e, ao tocar, abre o caminho interno enviado pelo servidor (somente caminhos do próprio app).
+self.addEventListener("push", (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch { d = {}; }
+  const title = typeof d.title === "string" && d.title ? d.title.slice(0, 80) : "NaRégua";
+  const body = typeof d.body === "string" ? d.body.slice(0, 160) : "";
+  const url = typeof d.url === "string" && d.url.startsWith("/") && !d.url.startsWith("//") ? d.url : "/";
+  e.waitUntil(self.registration.showNotification(title, { body, icon: "/icon-192.png", badge: "/icon-192.png", data: { url } }));
+});
+
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || "/";
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+    for (const c of list) { if (new URL(c.url).origin === self.location.origin && "focus" in c) { c.navigate(url); return c.focus(); } }
+    return self.clients.openWindow(url);
+  }));
 });

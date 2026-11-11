@@ -3,6 +3,7 @@ import { createContext, useContext } from "react";
 export interface UnitInfo {
   id: string; name: string; slug: string; address: string | null; phone: string | null; timezone: string; status: string;
   auto_confirm: number; min_notice_min: number; max_days_ahead: number; slot_step_min: number; cancel_window_min: number;
+  city: string | null; state: string | null; description: string | null; listed: number;
 }
 export interface AdminCtx {
   orgId: string;

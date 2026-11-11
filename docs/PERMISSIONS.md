@@ -17,6 +17,9 @@ Fonte única: `packages/shared/src/permissions.ts`. O Worker autoriza; o front s
 | report.read | ✔ | ✔ | ✔ | |
 | finance.read / write (despesas, caixa, relatórios financeiros, na unidade) | ✔ | ✔ | | |
 | stock.read / write (saldo e movimentação, na unidade) | ✔ | ✔ | ✔ | |
+| chat.read / write (conversas da unidade) | ✔ | ✔ | ✔ | |
+| marketing.manage (campanhas; de organização) | ✔ | | | |
+| Ligar a vitrine pública da unidade (`unit.manage`) | ✔ | ✔ própria | | |
 | Regras de comissão, produtos (catálogo), fidelidade/lembretes (`/automation`), fila de e-mails | ✔ (`org.manage`) | | | |
 | Ver as **próprias** comissões (`/finance/commissions/mine`) | ✔ se for profissional | se vinculado | se vinculado | ✔ se vinculado a um profissional |
 

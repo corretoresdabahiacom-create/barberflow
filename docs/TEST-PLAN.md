@@ -1,6 +1,6 @@
 # Plano e resultados de testes
 
-## Executado e aprovado (Fases 1 e 2) — `pnpm test`: **116/116**, mais 3/3 do script de backup
+## Executado e aprovado (Fases 1, 2 e 3) — `pnpm test`: **156/156**, mais 3/3 do script de backup
 Ambiente: Vitest 4 dentro do **workerd** (runtime real do Workers) com **D1 local** (miniflare). Evidência **local**: não substitui testes em D1/Workers remotos.
 
 | Arquivo | Testes | Cobre |
@@ -17,9 +17,16 @@ Ambiente: Vitest 4 dentro do **workerd** (runtime real do Workers) com **D1 loca
 | `loyalty.test.ts` | 8 | desligada por padrão, ganho 1×/atendimento, sem pontos em cancelamento, resgate (insuficiente/idempotente), **5 resgates simultâneos c/ saldo 20 → 2 passam**, append-only, configuração só do dono, isolamento |
 | `outbox.test.ts` | 12 | enfileira+envia, dedupe, desligado por padrão, sem provedor, opt-out, janela +2 h/+24 h e status, cliente sem e-mail, retry com backoff até 5 → `failed`, recuperação, `skipped` se cancelado, isolamento entre organizações, visibilidade da fila, **2 execuções simultâneas → 1 envio** |
 
-Matriz de isolamento ampliada: +24 rotas da Fase 2 (dono de A → B = 404). Varredura estática passou a cobrir as 8 tabelas novas.
+| `webpush.test.ts` | 5 | **reproduz byte a byte o vetor de teste do RFC 8291**; round-trip com decifragem do lado do navegador; chaves/payload inválidos; JWT VAPID verificável; allowlist anti-SSRF (8 URLs hostis) |
+| `discovery.test.ts` | 6 | opt-in (não aparece por padrão; exige cidade/UF), campos expostos, filtros, desligar/inativar, permissão, validação/injeção, limite por IP |
+| `push.test.ts` | 7 | config, validação e SSRF, idempotência/limite de 10/remoção, troca de dono do aparelho, push no chat nos dois sentidos, assinatura expirada apagada, falha do serviço não derruba o chat, push desligado |
+| `chat.test.ts` | 9 | só quem agendou na unidade; fluxo e não lidas; validação e limite 20/10 min; bloqueio/reabertura + auditoria; imutável e separação entre clientes; permissões e unidade; isolamento entre organizações; filial sem agendamento; LGPD (exportação, anonimização) |
+| `marketing.test.ts` | 13 | permissão só do dono; validação; **público = opt-in vigente**; WhatsApp/serviço não valem; sem provedor; envio + personalização + rodapé + `List-Unsubscribe`; **3 envios simultâneos → 1**; descadastro (query e corpo), idempotente, vale para a fila; token adulterado/forjado; teto diário; segmento inativos; isolamento; rascunho × enviada |
+
+Matriz de isolamento ampliada: +10 rotas de chat/campanhas (Fase 3) e +24 da Fase 2 (dono de A → B = 404). Varredura estática passou a cobrir as 8 tabelas novas.
 **Limites desses testes:** o remetente de e-mail é falso (nenhum provedor real); o "cron" é chamado como função (`runScheduled`), e só um `wrangler dev --test-scheduled` local confirmou que o handler responde; atomicidade de `batch()` e concorrência só no emulador local.
 
+**Verificação de mutação (Fase 3):** invertido o opt-in de marketing (sem registro passa a receber), desligada a checagem da assinatura do token de descadastro e removida a regra "só conversa com a unidade onde agendou" → 3 + 1 testes falharam; restaurado → 156/156. (Na primeira rodada a regra de unidade NÃO foi pega: faltava o teste da filial na mesma organização; foi escrito.)
 **Verificação de mutação:** (Fase 2) removidos propositalmente os guardas de saldo (estoque e pontos) → 5 testes falharam; restaurados → passam. (Fase 1) removido propositalmente o filtro de tenant em `loadCustomer` → o teste "ID de B dentro da URL de A nunca vaza" falhou; restaurado → 70/70.
 **Bugs reais achados pelos testes:** telefone fixo de 10 dígitos aceitava celular antigo sem o 9 (corrigido); permissão de serviços permitia admin de unidade alterar preços de toda a organização (corrigida).
 
@@ -31,4 +38,5 @@ Landing, reserva pública (35 horários, avanço automático para o próximo dia
 - Telas autenticadas do painel e do portal do cliente **não foram exercitadas em navegador** (dependem de Firebase); só typecheck + build. Toda a API por trás delas está testada.
 - Instalação do PWA em Android/iOS, acessibilidade com leitor de tela, Lighthouse.
 - Carga, CPU de 10 ms, D1 remoto, pentest.
+- Web Push contra FCM/Mozilla/Apple, e-mail de campanha em provedor real, chat em aparelhos, iOS (PWA instalado), entregabilidade.
 - Testes automatizados do front (não há). Abas Financeiro/Estoque/Automação nunca foram abertas em navegador (exigem login Firebase).

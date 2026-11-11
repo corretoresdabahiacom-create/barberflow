@@ -15,7 +15,7 @@ export function Landing() {
       <section className="space-y-4 pt-6">
         <h1 className="text-4xl font-extrabold leading-tight sm:text-5xl">Cabelo na <span className="text-amber">régua</span>.<br />Agenda também.</h1>
         <p className="max-w-xl text-lg text-mute">{APP_NAME} é a agenda online da sua barbearia: o cliente escolhe o barbeiro e o horário pelo celular, sem baixar nada, e você acaba com a dupla reserva.</p>
-        <div className="flex flex-wrap gap-3"><Link to="/entrar?novo=1"><Button>Criar minha barbearia</Button></Link></div>
+        <div className="flex flex-wrap gap-3"><Link to="/entrar?novo=1"><Button>Criar minha barbearia</Button></Link><Link to="/descobrir"><Button variant="ghost">Encontrar uma barbearia</Button></Link></div>
       </section>
       <section className="grid gap-3 sm:grid-cols-3">
         {[["Sem dupla reserva", "O banco de dados recusa dois clientes no mesmo horário."], ["QR Code fixo", "Cole no espelho: o link da sua unidade nunca muda."], ["Equipe com permissões", "Barbeiro vê só a própria agenda; dono vê tudo."]].map(([t, d]) => (
