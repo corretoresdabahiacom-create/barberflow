@@ -22,6 +22,39 @@ export interface Env {
   UNSUBSCRIBE_SECRET?: string;
   /** URL pública do app (https://...), usada nos links dos e-mails de campanha. */
   PUBLIC_BASE_URL?: string;
+  /** E-mails (verificados) dos administradores da plataforma, separados por vírgula. Vazio = ninguém. */
+  PLATFORM_ADMIN_EMAILS?: string;
+  /** IA assistiva — todas opcionais; um provedor só entra na cadeia se a chave existir. Chaves via `wrangler secret put`. */
+  AI_PROVIDER_ORDER?: string; // ex.: "gemini,groq,openrouter,workers-ai,xai" (padrão)
+  GEMINI_API_KEY?: string;
+  GEMINI_MODEL?: string;
+  GROQ_API_KEY?: string;
+  GROQ_MODEL?: string;
+  OPENROUTER_API_KEY?: string;
+  OPENROUTER_MODEL?: string;
+  XAI_API_KEY?: string; // Grok: API paga (sem camada gratuita publicada) — só entra se você configurar a chave
+  XAI_MODEL?: string; // obrigatório para o xAI entrar na cadeia (nome do modelo muda com frequência)
+  /** Binding do Cloudflare Workers AI (cota gratuita diária da conta). */
+  AI?: { run: (model: string, input: unknown) => Promise<unknown> };
+  WORKERS_AI_MODEL?: string;
+}
+
+export interface AiRequest {
+  system: string;
+  user: string;
+  maxTokens: number;
+}
+
+export interface AiResult {
+  text: string;
+  provider: string;
+}
+
+/** Cadeia de provedores de IA com fallback. Lança `Error("ai_unavailable")` se todos falharem. */
+export interface AiClient {
+  /** Provedores configurados (ordem da cadeia). Nunca expõe chaves. */
+  available: (env: Env) => string[];
+  generate: (req: AiRequest, env: Env) => Promise<AiResult>;
 }
 
 export interface EmailMessage {
@@ -66,4 +99,5 @@ export interface AppDeps {
   now: () => Date;
   email: EmailSender;
   push: PushSender;
+  ai: AiClient;
 }

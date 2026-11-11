@@ -18,12 +18,14 @@
       "migrations_dir": "migrations"
     }
   ],
+  "ai": { "binding": "AI" },
   "triggers": { "crons": ["*/15 * * * *"] },
   "vars": {
     "ENVIRONMENT": "production",
     "APP_NAME": "NaRégua",
     "FIREBASE_PROJECT_ID": "",
     "TURNSTILE_SITE_KEY": "",
-    "ALLOWED_ORIGINS": ""
+    "ALLOWED_ORIGINS": "",
+    "PLATFORM_ADMIN_EMAILS": ""
   }
 }

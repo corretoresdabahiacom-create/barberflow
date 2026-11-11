@@ -40,3 +40,5 @@ O Worker serve `/api/*` e, para o resto, os arquivos de `apps/web/dist` (com `_h
 
 ## 5. GitHub Actions
 CI (`ci.yml`) roda sem segredos. Backup (`backup.yml`): ver BACKUP-RESTORE.md.
+
+IA (opcional, Fase 4): veja docs/AI.md. `npx wrangler secret put GEMINI_API_KEY` (e/ou `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `XAI_API_KEY`+`XAI_MODEL`); o binding `AI` do Workers AI já está em `wrangler.jsonc` (exige conta Cloudflare; cota grátis 10.000 Neurons/dia). Administração da plataforma: defina `PLATFORM_ADMIN_EMAILS` (seu e-mail verificado) em `vars` e abra `/plataforma`. **Nada disso foi exercitado contra serviços reais.**

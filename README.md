@@ -26,7 +26,7 @@ scripts/      envio de backup ao Google Drive
 ## Rodar localmente
 ```bash
 corepack enable && pnpm install
-pnpm test                 # 156 testes da API (workerd + D1 local)
+pnpm test                 # 197 testes da API (workerd + D1 local)
 pnpm typecheck && pnpm build
 cd apps/worker && pnpm db:migrate:local
 # terminal 1:  pnpm dev:worker      (http://localhost:8787, serve também o front buildado)

@@ -59,3 +59,11 @@ Sem registro de consentimento = não recebe (diferente dos lembretes de serviço
 ## ADR-019 — Web Push próprio com WebCrypto
 Sem biblioteca externa (compatível com Workers). Criptografia validada pelo vetor do RFC 8291. Endpoints restritos a uma allowlist de serviços de push (anti-SSRF). Envio melhor-esforço em segundo plano, sem outbox/retry: o aviso interno e o chat são a fonte da verdade.
 
+## ADR-020 — IA assistiva: sugestão, sem dados de cliente, cadeia com fallback
+Provedores atrás de `deps.ai` (injetável, testes sem rede). Cadeia: Gemini → Groq → OpenRouter → Workers AI → xAI/Grok, ordem configurável; só entra com chave. Planos gratuitos podem treinar com o conteúdo, então **nenhum dado de cliente sai** (só texto do dono mascarado, nomes de serviços e agregados). Saída não confiável (links/e-mails removidos), nunca executa nem envia. Desligada por padrão; cota por barbearia ∧ plano, reservada atomicamente; uso registrado sem conteúdo. Grok é integrado mas **pago** (não há camada gratuita publicada).
+
+## ADR-021 — Rede/franquia: agregados com consentimento, sem visão cruzada de clientes
+Convite hash+expiração+uso único; aceite registrado; saída imediata; membro não vê outros membros. Escolhi 4 métricas fixas e não configuráveis para que ampliar o que é compartilhado exija mudança de código e novo consentimento.
+
+## ADR-022 — Planos em banco, assinatura manual, degradação suave
+Preços/limites editáveis e nulos por padrão. Plano vencido volta ao `free` sem apagar nada. Sem gateway: cobrança é decisão e integração futuras. Administração da plataforma por lista de e-mails verificados em variável de ambiente, 404 para os demais.

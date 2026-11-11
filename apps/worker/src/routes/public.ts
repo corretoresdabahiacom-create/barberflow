@@ -30,6 +30,13 @@ function ipOf(c: { req: { header: (n: string) => string | undefined } }): string
   return c.req.header("cf-connecting-ip") ?? "unknown";
 }
 
+// Planos ativos (preços editáveis pela plataforma; priceCents nulo = "a definir").
+publicRoutes.get("/plans", async (c) => {
+  const { results } = await c.env.DB.prepare("SELECT id, name, price_cents, max_units, max_professionals, ai_daily_quota, allow_network FROM plans WHERE active = 1 ORDER BY sort, id").all();
+  c.header("Cache-Control", "public, max-age=300");
+  return c.json({ plans: results });
+});
+
 // Página pública da unidade: somente dados que a barbearia quer divulgar.
 publicRoutes.get("/units/:slug", async (c) => {
   const slug = SLUG.safeParse(c.req.param("slug"));

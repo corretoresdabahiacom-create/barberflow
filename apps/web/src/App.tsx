@@ -7,6 +7,7 @@ import { CustomerPortal } from "./pages/Customer";
 import { Landing } from "./pages/Landing";
 import { Privacy, Terms } from "./pages/Legal";
 import { Login } from "./pages/Login";
+import { Platform } from "./pages/Platform";
 import { ManageAppointment, PublicBooking } from "./pages/PublicBooking";
 
 export function App() {
@@ -20,6 +21,7 @@ export function App() {
         <Route path="/c" element={<CustomerPortal />} />
         <Route path="/app/*" element={<AdminApp />} />
         <Route path="/descobrir" element={<Discover />} />
+        <Route path="/plataforma" element={<Platform />} />
         <Route path="/sair" element={<Unsubscribe />} />
         <Route path="/termos" element={<Terms />} />
         <Route path="/privacidade" element={<Privacy />} />

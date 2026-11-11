@@ -1,3 +1,4 @@
+import { assertWithinLimit } from "../domain/plans";
 import { Hono } from "hono";
 import { z } from "zod";
 import { auditStmt } from "../lib/audit";
@@ -158,6 +159,7 @@ catalogRoutes.post("/professionals", async (c) => {
   await assertUnitsInOrg(c.env.DB, org.id, b.unitIds);
   const userId = b.memberId ? await memberUserId(c.env.DB, org.id, b.memberId) : null;
   const now = isoNow(c.get("deps").now());
+  await assertWithinLimit(c.env.DB, org.id, now, "professionals");
   const pid = newId();
   await c.env.DB.batch([
     c.env.DB.prepare("INSERT INTO professionals (id, organization_id, user_id, name, bio, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)")

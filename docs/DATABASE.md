@@ -22,3 +22,6 @@ Triggers `RAISE(ABORT, 'append_only')` em UPDATE/DELETE de `audit_logs`, `appoin
 
 ## Migrações
 Arquivos numerados em `apps/worker/migrations/`. Local: `pnpm --filter @naregua/worker db:migrate:local`. Remoto: `db:migrate:remote` (exige conta Cloudflare + `database_id` real em `wrangler.jsonc`). **Nunca editar migração já aplicada**; criar a próxima.
+
+## Fase 4 (migração 0004)
+`ai_settings`, `ai_usage` (só metadados), `plans` (editáveis; 3 linhas iniciais provisórias), `org_subscriptions`, `networks`, `network_members` (aceite: quem/quando; uma rede por organização), `network_invites` (hash, expiração, uso único). `plans` e `networks` não são de tenant; as demais seguem a varredura estática (`organization_id` ou `tenant-ok` justificado nas consultas de rede).

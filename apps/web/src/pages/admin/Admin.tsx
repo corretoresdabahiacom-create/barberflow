@@ -10,6 +10,8 @@ import { AdminContext, orgPath, type UnitInfo } from "./ctx";
 import { Automation } from "./Automation";
 import { Chat } from "./Chat";
 import { Marketing } from "./Marketing";
+import { Intelligence } from "./Intelligence";
+import { NetworkTab, PlanTab } from "./NetworkPlan";
 import { PushToggle } from "../../components/PushToggle";
 import { Finance } from "./Finance";
 import { Customers, Team } from "./People";
@@ -75,7 +77,7 @@ function Panel({ orgs }: { orgs: [string, string][] }) {
   useEffect(() => { setUnits(null); setPerms(null); void reloadUnits(); }, [reloadUnits]);
 
   const ctx = useMemo(() => units && perms ? { orgId, orgName, units, perms, can: (p: string) => perms.has(p), reloadUnits } : null, [orgId, orgName, units, perms, reloadUnits]);
-  const tabs: [string, string, string?][] = [["agenda", "Agenda"], ["profissionais", "Equipe de trabalho", "catalog.read"], ["servicos", "Serviços", "catalog.read"], ["clientes", "Clientes", "customer.read"], ["acessos", "Acessos", "user.manage"], ["relatorios", "Relatórios", "report.read"], ["financeiro", "Financeiro", "finance.read"], ["estoque", "Estoque", "stock.read"], ["conversas", "Conversas", "chat.read"], ["campanhas", "Campanhas", "marketing.manage"], ["automacao", "Automação", "org.manage"], ["avisos", "Avisos"], ["ajustes", "Ajustes", "agenda.read"]];
+  const tabs: [string, string, string?][] = [["agenda", "Agenda"], ["profissionais", "Equipe de trabalho", "catalog.read"], ["servicos", "Serviços", "catalog.read"], ["clientes", "Clientes", "customer.read"], ["acessos", "Acessos", "user.manage"], ["relatorios", "Relatórios", "report.read"], ["financeiro", "Financeiro", "finance.read"], ["estoque", "Estoque", "stock.read"], ["conversas", "Conversas", "chat.read"], ["campanhas", "Campanhas", "marketing.manage"], ["automacao", "Automação", "org.manage"], ["ia", "IA", "ai.use"], ["rede", "Rede", "org.manage"], ["plano", "Plano", "org.manage"], ["avisos", "Avisos"], ["ajustes", "Ajustes", "agenda.read"]];
 
   return (
     <div className="mx-auto max-w-3xl px-4 pb-24 pt-[max(1rem,env(safe-area-inset-top))]">
@@ -109,6 +111,9 @@ function Panel({ orgs }: { orgs: [string, string][] }) {
             <Route path="conversas" element={<Chat />} />
             <Route path="campanhas" element={<Marketing />} />
             <Route path="automacao" element={<Automation />} />
+            <Route path="ia" element={<Intelligence />} />
+            <Route path="rede" element={<NetworkTab />} />
+            <Route path="plano" element={<PlanTab />} />
             <Route path="avisos" element={<Notifications />} />
             <Route path="ajustes" element={<Settings />} />
             <Route path="*" element={<Notice>Página não encontrada.</Notice>} />

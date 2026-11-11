@@ -78,7 +78,25 @@ export const pusher = {
   failWith: null as string | null,
 };
 
+/** IA falsa: registra os prompts recebidos (para provar que não há dados pessoais) e falha sob demanda. */
+export const fakeAi = {
+  providers: ["fake"] as string[],
+  calls: [] as { system: string; user: string }[],
+  reply: '{"subject":"Volte para a régua, {{nome}}","body":"Olá {{nome}}, sentimos sua falta!"}',
+  fail: false,
+  hold: null as Promise<void> | null,
+};
+
 export const testDeps: AppDeps = {
+  ai: {
+    available: () => fakeAi.providers,
+    generate: async (req) => {
+      fakeAi.calls.push({ system: req.system, user: req.user });
+      if (fakeAi.hold) await fakeAi.hold;
+      if (fakeAi.fail) throw new Error("ai_unavailable");
+      return { text: fakeAi.reply, provider: "fake" };
+    },
+  },
   // MESMO código de verificação de produção; só a fonte das chaves públicas muda.
   verifyToken: async (token) =>
     verifyIdTokenWith(token, PROJECT, async (kid) => (kid === KID ? publicJwk : null), Math.floor(clock.ms / 1000)),
@@ -114,6 +132,11 @@ export function reset(): void {
   pusher.sent = [];
   pusher.goneEndpoints = new Set();
   pusher.failWith = null;
+  fakeAi.providers = ["fake"];
+  fakeAi.calls = [];
+  fakeAi.reply = '{"subject":"Volte para a régua, {{nome}}","body":"Olá {{nome}}, sentimos sua falta!"}';
+  fakeAi.fail = false;
+  fakeAi.hold = null;
   clock.ms = Date.UTC(2026, 10, 6, 15, 0, 0);
 }
 
@@ -232,4 +255,13 @@ export async function bookedCustomer(shop: Shop, opts: { hour?: number; phone?: 
   if (appt.status !== 201) throw new Error(`bookedCustomer: ${appt.status} ${JSON.stringify(appt.body)}`);
   await api("GET", "/api/me", { token }); // vincula por e-mail verificado
   return { token, uid, email, apptId: appt.body.appointment.id as string, customerId: await apptCustomerId(appt.body.appointment.id) };
+}
+
+/** Administrador da plataforma: e-mail verificado listado em PLATFORM_ADMIN_EMAILS (wrangler.test.jsonc). */
+export const platformToken = () => signToken({ uid: "plat-admin", email: "dona@plataforma.test", verified: true });
+
+/** Põe a organização no plano `rede` (permite criar rede/franquia) pelo caminho real da plataforma. */
+export async function giveNetworkPlan(orgId: string): Promise<void> {
+  const r = await api("PUT", `/api/platform/orgs/${orgId}/subscription`, { token: await platformToken(), body: { planId: "rede", status: "active", validUntil: null, note: null } });
+  if (r.status !== 200) throw new Error(`giveNetworkPlan: ${r.status} ${JSON.stringify(r.body)}`);
 }

@@ -1,12 +1,25 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { api } from "../lib/api";
 import { APP_NAME } from "../config/app";
-import { PLANS } from "../config/plans";
+import { PLANS, type PlanDef } from "../config/plans";
 import { Button, Card, Logo } from "../components/ui";
 import { formatBRL } from "@naregua/shared";
 import { useAuth } from "../lib/auth";
 
+interface ApiPlan { id: string; name: string; price_cents: number | null; max_units: number | null; max_professionals: number | null; ai_daily_quota: number; allow_network: number }
+const planFeatures = (p: ApiPlan): string[] => [
+  p.max_units === null ? "Unidades ilimitadas" : `Até ${p.max_units} unidade(s)`,
+  p.max_professionals === null ? "Profissionais ilimitados" : `Até ${p.max_professionals} profissionais`,
+  ...(p.ai_daily_quota > 0 ? [`IA assistiva (${p.ai_daily_quota}/dia)`] : []),
+  ...(p.allow_network ? ["Rede/franquia com relatório agregado"] : []),
+];
+
 export function Landing() {
   const { me } = useAuth();
+  const [plans, setPlans] = useState<PlanDef[]>(PLANS);
+  // Planos vêm do servidor (editáveis pelo operador); se falhar, mostra a lista estática de reserva.
+  useEffect(() => { api<{ plans: ApiPlan[] }>("/public/plans").then((d) => setPlans(d.plans.map((p) => ({ id: p.id, name: p.name, priceCents: p.price_cents, features: planFeatures(p) })))).catch(() => undefined); }, []);
   return (
     <main className="mx-auto max-w-3xl space-y-10 px-4 pb-20 pt-[max(1.5rem,env(safe-area-inset-top))]">
       <header className="flex items-center justify-between"><Logo /><nav className="flex gap-2">
@@ -24,10 +37,10 @@ export function Landing() {
       </section>
       <section className="space-y-3">
         <h2 className="text-xl font-bold">Planos</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {PLANS.map((p) => (
+        <div className="grid gap-3 sm:grid-cols-3">
+          {plans.map((p) => (
             <Card key={p.id}><h3 className="font-semibold">{p.name}</h3>
-              <p className="text-2xl font-bold text-amber">{p.priceCents === null ? "Em breve" : formatBRL(p.priceCents)}</p>
+              <p className="text-2xl font-bold text-amber">{p.priceCents === null ? "Em breve" : p.priceCents === 0 ? "Grátis" : formatBRL(p.priceCents)}</p>
               <ul className="mt-2 list-disc pl-5 text-sm text-mute">{p.features.map((f) => <li key={f}>{f}</li>)}</ul></Card>
           ))}
         </div>

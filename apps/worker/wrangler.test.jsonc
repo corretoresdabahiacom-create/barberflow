@@ -4,5 +4,5 @@
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat"],
   "d1_databases": [{ "binding": "DB", "database_name": "naregua-test", "database_id": "test", "migrations_dir": "migrations" }],
-  "vars": { "ENVIRONMENT": "test", "APP_NAME": "NaRégua", "FIREBASE_PROJECT_ID": "naregua-test", "TURNSTILE_SITE_KEY": "", "ALLOWED_ORIGINS": "https://app.test", "UNSUBSCRIBE_SECRET": "segredo-de-teste-descadastro-0123456789", "PUBLIC_BASE_URL": "https://naregua.test", "VAPID_PUBLIC_KEY": "teste", "VAPID_SUBJECT": "mailto:teste@naregua.test" }
+  "vars": { "ENVIRONMENT": "test", "APP_NAME": "NaRégua", "FIREBASE_PROJECT_ID": "naregua-test", "TURNSTILE_SITE_KEY": "", "ALLOWED_ORIGINS": "https://app.test", "PLATFORM_ADMIN_EMAILS": "dona@plataforma.test", "UNSUBSCRIBE_SECRET": "segredo-de-teste-descadastro-0123456789", "PUBLIC_BASE_URL": "https://naregua.test", "VAPID_PUBLIC_KEY": "teste", "VAPID_SUBJECT": "mailto:teste@naregua.test" }
 }

@@ -24,6 +24,16 @@
 | Vazamento por erro | Handler global devolve mensagem genérica; detalhes só no log |
 | Segredos | Nenhum no repositório; Turnstile secret via `wrangler secret`; `.dev.vars` ignorado |
 
+## Fase 4
+| Tema | Controle |
+|---|---|
+| Privacidade da IA | nada de dado de cliente para provedores; texto do dono com PII mascarada; teste prova que nome/telefone/e-mail de cliente não aparecem no prompt |
+| Injeção de prompt | entrada em `<dados>…</dados>` sem permitir fechar o bloco; instrução de sistema de não obedecer; saída sem links/e-mails; humano revisa; nada é enviado/gravado pela IA |
+| Abuso/custo | desligada por padrão, cota atômica por barbearia ∧ plano, limite por usuário, timeout de 15 s |
+| Chaves de IA | só em `wrangler secret`; Gemini usa cabeçalho `x-goog-api-key` (nunca na URL); log de erro só com id do provedor e status |
+| Rede/franquia | consentimento explícito, convite hash/expira/uso único, 4 agregados fixos, saída imediata, 404 para quem está fora |
+| Plataforma | `/api/platform/*` só para e-mails verificados da lista; 404 para os demais |
+
 ## Limitações honestas
 - **Rate limit em memória por isolate**: serve como freio, não como barreira; a barreira real é Turnstile + limites no banco.
 - **CPU de 10 ms** do plano Free não foi medida (só em produção). A verificação RSA é a operação mais cara por requisição.

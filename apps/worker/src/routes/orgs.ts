@@ -17,6 +17,9 @@ import { stockRoutes } from "./stock";
 import { loyaltyRoutes } from "./loyalty";
 import { chatRoutes } from "./chat";
 import { marketingRoutes } from "./marketing";
+import { aiRoutes } from "./ai";
+import { networkRoutes } from "./network";
+import { assertWithinLimit, effectivePlan, planUsage } from "../domain/plans";
 
 export const orgRoutes = new Hono<AppEnv>();
 orgRoutes.use("*", requireAuth);
@@ -135,6 +138,7 @@ scoped.post("/units", async (c) => {
     z.object({ name: z.string().trim().min(2).max(120), slug: slugSchema, address: z.string().trim().max(200).optional(), phone: z.string().trim().max(25).optional() }).strict(),
   );
   const now = isoNow(c.get("deps").now());
+  await assertWithinLimit(c.env.DB, org.id, now, "units");
   const id = newId();
   try {
     await c.env.DB.batch([
@@ -318,6 +322,21 @@ scoped.route("/", stockRoutes);
 scoped.route("/", loyaltyRoutes);
 scoped.route("/", chatRoutes);
 scoped.route("/", marketingRoutes);
+scoped.route("/", aiRoutes);
+scoped.route("/", networkRoutes);
+
+// Plano em vigor + uso atual (para o painel e para explicar bloqueios por limite).
+scoped.get("/plan", async (c) => {
+  const org = c.get("org");
+  requirePerm(org, "org.manage");
+  const now = isoNow(c.get("deps").now());
+  const [plan, usage, sub] = await Promise.all([
+    effectivePlan(c.env.DB, org.id, now),
+    planUsage(c.env.DB, org.id),
+    c.env.DB.prepare("SELECT plan_id, status, valid_until FROM org_subscriptions WHERE organization_id = ?").bind(org.id).first(),
+  ]);
+  return c.json({ plan, usage, subscription: sub ?? null });
+});
 
 orgRoutes.route("/:orgId", scoped);
 

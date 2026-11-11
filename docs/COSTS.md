@@ -17,6 +17,9 @@ Concluir um atendimento passa a gravar +1 comissão e (se a fidelidade estiver l
 ## Fase 3: impacto
 Chat por polling de 15 s (só com a aba aberta e visível): cada conversa ativa ≈ 4 leituras/min por participante — com muitas conversas simultâneas isso consome leituras do D1 (5 milhões/dia) e requisições do Worker (100 mil/dia) mais rápido que a agenda; é o primeiro recurso a migrar para Durable Objects/WebSocket se crescer. Web Push não tem custo de provedor (usa os serviços dos navegadores), mas cada envio é 1 subrequest. Campanhas: até 200 e-mails/dia/organização, dentro de 20 envios por execução do cron — o gargalo real é a cota do provedor de e-mail (conferir).
 
+## Fase 4: impacto
+IA: Gemini/Groq/OpenRouter têm limites diários baixos e variáveis (conferir nas páginas oficiais antes de lançar — a pesquisa desta fase leu comparativos de terceiros para Groq/OpenRouter); Workers AI: 10.000 Neurons/dia grátis por conta (oficial), depois falha no plano Free; **xAI/Grok é pago**. A cota por barbearia protege o limite gratuito compartilhado por todas as barbearias — com muitas barbearias, a cota diária da conta inteira é o gargalo e a saída é um plano pago de IA (decisão sua). Cada uso de IA = 1–2 escritas no D1 (reserva + conclusão). Redes: relatório agrega com 2 consultas por chamada. Nada de cobrança de assinatura foi implementado.
+
 ## Estimativa honesta
 Uma barbearia média (100 agendamentos/dia) cabe folgadamente. O primeiro gargalo previsível é **escrita no D1** (100 mil/dia) com muitas barbearias; o segundo, a CPU de 10 ms. A saída é o plano pago do Workers (valor a conferir no site da Cloudflare) — decisão sua, não implementada.
 

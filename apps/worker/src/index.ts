@@ -2,6 +2,7 @@ import { createApp } from "./app";
 import { verifyFirebaseToken } from "./auth/firebase";
 import { runScheduled } from "./domain/outbox";
 import type { AppDeps, EmailSender, Env, PushSender } from "./env";
+import { createAiClient } from "./lib/ai";
 import { encryptPayload, vapidAuthHeader } from "./lib/webpush";
 
 /** Cloudflare Turnstile. Falha FECHADA: sem segredo configurado, nenhuma reserva pública é aceita. */
@@ -63,6 +64,7 @@ const deps: AppDeps = {
   now: () => new Date(),
   email,
   push,
+  ai: createAiClient(),
 };
 
 const app = createApp(deps);

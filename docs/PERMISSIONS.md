@@ -19,6 +19,8 @@ Fonte única: `packages/shared/src/permissions.ts`. O Worker autoriza; o front s
 | stock.read / write (saldo e movimentação, na unidade) | ✔ | ✔ | ✔ | |
 | chat.read / write (conversas da unidade) | ✔ | ✔ | ✔ | |
 | marketing.manage (campanhas; de organização) | ✔ | | | |
+| ai.use (sugestões de IA; campanha exige também marketing.manage, descrição exige catalog.write) | ✔ | ✔ | ✔ | |
+| IA: ligar/cota, resumo com IA, plano da organização, rede/franquia (`org.manage`) | ✔ | | | |
 | Ligar a vitrine pública da unidade (`unit.manage`) | ✔ | ✔ própria | | |
 | Regras de comissão, produtos (catálogo), fidelidade/lembretes (`/automation`), fila de e-mails | ✔ (`org.manage`) | | | |
 | Ver as **próprias** comissões (`/finance/commissions/mine`) | ✔ se for profissional | se vinculado | se vinculado | ✔ se vinculado a um profissional |

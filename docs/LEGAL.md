@@ -14,3 +14,7 @@ Rascunhos de **Termos de Uso** e **Política de Privacidade** sob a legislação
 - **Vitrine**: só divulga o que o estabelecimento escolhe; avaliações NÃO existem.
 - **Push**: depende de permissão do navegador; payload mínimo.
 
+## Fase 4 — pontos para o(a) advogado(a)
+- **IA**: listar os provedores como subprocessadores e avisar que, em planos gratuitos, o texto pode ser usado para melhorar produtos (Gemini). O sistema não envia dado de cliente; ainda assim o dono pode digitar dado pessoal em texto livre (há máscara de e-mail/telefone/CPF/CNPJ, mas não de nomes). Decidir se isso exige aviso/cláusula.
+- **Rede/franquia**: o aceite registra quem aceitou e os 4 agregados compartilhados; validar se basta para a relação entre as barbearias (contrato entre elas é fora do sistema).
+- **Assinatura/plano**: cobrança não existe; termos de uso/contrato de prestação do serviço e política de cancelamento ainda a redigir.

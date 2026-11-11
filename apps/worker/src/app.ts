@@ -7,6 +7,7 @@ import { withDeps, type AppEnv } from "./auth/middleware";
 import { HttpError } from "./lib/http";
 import { meRoutes } from "./routes/me";
 import { orgRoutes } from "./routes/orgs";
+import { platformRoutes } from "./routes/platform";
 import { publicRoutes } from "./routes/public";
 
 export function createApp(deps: AppDeps): Hono<AppEnv> {
@@ -40,6 +41,7 @@ export function createApp(deps: AppDeps): Hono<AppEnv> {
   app.route("/api/public", publicRoutes);
   app.route("/api/me", meRoutes);
   app.route("/api/orgs", orgRoutes);
+  app.route("/api/platform", platformRoutes);
 
   app.notFound((c) => c.json({ error: { code: "not_found", message: "Recurso não encontrado" } }, 404));
 

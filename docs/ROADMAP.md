@@ -6,6 +6,6 @@
 | 1 | Núcleo: organizações, unidades, equipe/RBAC, catálogo, agenda anti-conflito, reserva pública/QR, portal do cliente, clientes/LGPD, pagamento manual, relatórios simples, PWA | **API implementada e testada localmente; front buildado, telas autenticadas sem teste em navegador; sem deploy** |
 | 2 | Financeiro (caixa, despesas, comissões), estoque, fidelidade, outbox + cron + lembretes por e-mail | **API implementada e testada localmente; telas compilam; e-mail real, cupons e vendas no caixa pendentes; sem deploy** |
 | 3 | Marketing (campanhas com consentimento), Web Push, chat, descoberta/vitrine | **API implementada e testada localmente; telas compilam e a vitrine foi vista em navegador; push/e-mail reais, WhatsApp, avaliações e mapa pendentes; sem deploy** |
-| 4 | Redes/franquias, planos e cobrança (preços editáveis), IA assistiva | não iniciada |
+| 4 | Redes/franquias, planos (preços editáveis), assinatura manual, IA assistiva gratuita | **API implementada e testada localmente (provedores de IA simulados); telas compilam; IA real, cobrança automática e deploy pendentes** |
 
 Itens dependem de decisões externas: gateway de pagamento, provedor de e-mail/WhatsApp (custo e consentimento), domínio e marca.
