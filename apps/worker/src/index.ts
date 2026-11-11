@@ -1,6 +1,7 @@
 import { createApp } from "./app";
 import { verifyFirebaseToken } from "./auth/firebase";
-import type { AppDeps, Env } from "./env";
+import { runScheduled } from "./domain/outbox";
+import type { AppDeps, EmailSender, Env } from "./env";
 
 /** Cloudflare Turnstile. Falha FECHADA: sem segredo configurado, nenhuma reserva pública é aceita. */
 async function verifyTurnstile(token: string | undefined, ip: string | null, env: Env): Promise<boolean> {
@@ -19,12 +20,35 @@ async function verifyTurnstile(token: string | undefined, ip: string | null, env
   }
 }
 
+/**
+ * Provedor de e-mail por HTTP (formato compatível com a API do Resend).
+ * ATENÇÃO: nunca testado contra um provedor real nesta fase — só ativa com EMAIL_API_KEY + EMAIL_FROM configurados.
+ */
+const email: EmailSender = {
+  enabled: (env) => Boolean(env.EMAIL_API_KEY && env.EMAIL_FROM),
+  send: async (msg, env) => {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { authorization: `Bearer ${env.EMAIL_API_KEY}`, "content-type": "application/json" },
+      body: JSON.stringify({ from: env.EMAIL_FROM, to: [msg.to], subject: msg.subject, text: msg.body }),
+    });
+    if (!res.ok) throw new Error(`email_provider_${res.status}`);
+  },
+};
+
 const deps: AppDeps = {
   verifyToken: verifyFirebaseToken,
   verifyTurnstile,
   now: () => new Date(),
+  email,
 };
 
 const app = createApp(deps);
 
-export default app;
+export default {
+  fetch: app.fetch,
+  // Cron (a cada 15 min): enfileira e envia lembretes. Falhas não derrubam o isolate.
+  async scheduled(_evt: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil(runScheduled(env, deps).then(() => undefined, (e) => console.error("scheduled_failed", e instanceof Error ? e.message : "unknown")));
+  },
+};

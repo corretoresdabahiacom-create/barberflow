@@ -15,6 +15,8 @@
 | Sessão roubada | Revogação global (`sessions_valid_after`) |
 | XSS/clickjacking | CSP restrita, X-Frame-Options, nosniff; React escapa por padrão (CSP **verificada só como cabeçalho presente**, não auditada contra o Firebase real) |
 | SQL injection | Somente `bind`; varredura confere que `${}` em SQL só monta placeholders/colunas fixas |
+| Financeiro/estoque/fidelidade (Fase 2) | `Idempotency-Key` obrigatória; lançamentos append-only por trigger; correção só por estorno/ajuste; inserts condicionais atômicos (saldo de estoque e de pontos nunca negativo, mesmo com concorrência — testado); permissões por unidade; comissão do profissional só a própria |
+| Lembretes por e-mail | desligado por padrão (organização + provedor); só para cliente com e-mail e **sem opt-out vigente**; um por agendamento (`dedupe_key`); corpo sem telefone e sem token; tentativas limitadas; fila visível só ao dono |
 | Vazamento por erro | Handler global devolve mensagem genérica; detalhes só no log |
 | Segredos | Nenhum no repositório; Turnstile secret via `wrangler secret`; `.dev.vars` ignorado |
 

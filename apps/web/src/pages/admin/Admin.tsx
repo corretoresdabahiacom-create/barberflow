@@ -7,7 +7,10 @@ import { useAuth } from "../../lib/auth";
 import { Agenda } from "./Agenda";
 import { Professionals, Services } from "./Catalog";
 import { AdminContext, orgPath, type UnitInfo } from "./ctx";
+import { Automation } from "./Automation";
+import { Finance } from "./Finance";
 import { Customers, Team } from "./People";
+import { Stock } from "./Stock";
 import { Reports, Settings } from "./Settings";
 
 const ORG_KEY = "naregua.org";
@@ -69,7 +72,7 @@ function Panel({ orgs }: { orgs: [string, string][] }) {
   useEffect(() => { setUnits(null); setPerms(null); void reloadUnits(); }, [reloadUnits]);
 
   const ctx = useMemo(() => units && perms ? { orgId, orgName, units, perms, can: (p: string) => perms.has(p), reloadUnits } : null, [orgId, orgName, units, perms, reloadUnits]);
-  const tabs: [string, string, string?][] = [["agenda", "Agenda"], ["profissionais", "Equipe de trabalho", "catalog.read"], ["servicos", "Serviços", "catalog.read"], ["clientes", "Clientes", "customer.read"], ["acessos", "Acessos", "user.manage"], ["relatorios", "Relatórios", "report.read"], ["avisos", "Avisos"], ["ajustes", "Ajustes", "agenda.read"]];
+  const tabs: [string, string, string?][] = [["agenda", "Agenda"], ["profissionais", "Equipe de trabalho", "catalog.read"], ["servicos", "Serviços", "catalog.read"], ["clientes", "Clientes", "customer.read"], ["acessos", "Acessos", "user.manage"], ["relatorios", "Relatórios", "report.read"], ["financeiro", "Financeiro", "finance.read"], ["estoque", "Estoque", "stock.read"], ["automacao", "Automação", "org.manage"], ["avisos", "Avisos"], ["ajustes", "Ajustes", "agenda.read"]];
 
   return (
     <div className="mx-auto max-w-3xl px-4 pb-24 pt-[max(1rem,env(safe-area-inset-top))]">
@@ -98,6 +101,9 @@ function Panel({ orgs }: { orgs: [string, string][] }) {
             <Route path="clientes" element={<Customers />} />
             <Route path="acessos" element={<Team />} />
             <Route path="relatorios" element={<Reports />} />
+            <Route path="financeiro" element={<Finance />} />
+            <Route path="estoque" element={<Stock />} />
+            <Route path="automacao" element={<Automation />} />
             <Route path="avisos" element={<Notifications />} />
             <Route path="ajustes" element={<Settings />} />
             <Route path="*" element={<Notice>Página não encontrada.</Notice>} />

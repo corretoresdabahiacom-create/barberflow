@@ -15,6 +15,10 @@ Fonte única: `packages/shared/src/permissions.ts`. O Worker autoriza; o front s
 | customer.read / write | ✔ | ✔ | ✔ | |
 | payment.create | ✔ | ✔ | | só com flag `can_receive_payments`, **apenas nos próprios atendimentos** |
 | report.read | ✔ | ✔ | ✔ | |
+| finance.read / write (despesas, caixa, relatórios financeiros, na unidade) | ✔ | ✔ | | |
+| stock.read / write (saldo e movimentação, na unidade) | ✔ | ✔ | ✔ | |
+| Regras de comissão, produtos (catálogo), fidelidade/lembretes (`/automation`), fila de e-mails | ✔ (`org.manage`) | | | |
+| Ver as **próprias** comissões (`/finance/commissions/mine`) | ✔ se for profissional | se vinculado | se vinculado | ✔ se vinculado a um profissional |
 
 Regras: permissões de organização exigem vínculo da organização inteira (`unit_id` nulo, só o dono); as demais valem na unidade do vínculo. Barbeiro vê agendamento fora da própria agenda como **404**; escrita não autorizada é 403. Não é possível atribuir `owner` via API, rebaixar/suspender/remover o último dono ativo. Trocar de profissional ou forçar encaixe (`override`) exige permissão plena na unidade.
 

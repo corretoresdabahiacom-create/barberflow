@@ -31,3 +31,19 @@ Sem Pix/cartão automático. Registro manual com `Idempotency-Key` obrigatória,
 
 ## ADR-010 — D1 `batch()` como transação
 Verificado **localmente** (workerd/miniflare): falha no meio do batch desfaz tudo (teste `booking.test.ts`). Não foi verificado em D1 remoto — repetir o teste após o primeiro deploy.
+
+## ADR-011 — Dinheiro e estoque sempre append-only, com saldo por soma
+Despesas, comissões, movimentações de estoque e pontos são imutáveis (trigger); correção = novo lançamento. Saldos são `SUM` (sem coluna "saldo" para dessincronizar), e escritas que dependem de saldo usam `INSERT … SELECT … WHERE saldo + delta >= 0` — atômico no SQLite, então concorrência não negativa o saldo (testado no emulador local).
+
+## ADR-012 — Comissão congelada na conclusão
+Calculada no mesmo `batch` que muda o status para `completed` (regra por serviço > padrão > 0; piso por item; base = itens do atendimento). Mudar a regra não reescreve o passado; só não há recálculo retroativo. Regras são do proprietário (`org.manage`), como preços.
+
+## ADR-013 — Caixa: só dinheiro; produtos fora
+Esperado = abertura + pagamentos `cash` da unidade na janela − despesas `cash` líquidas de estorno. PIX/cartão não entram. Vendas de produtos do estoque **ainda não** entram no caixa (limitação assumida, a resolver quando houver venda avulsa).
+
+## ADR-014 — Lembretes por outbox + cron, desligados por padrão
+`outbox` no D1 com `dedupe_key`, lease atômico, backoff e limite de 5 tentativas; cron `*/15` (1 dos 5 gratuitos). Só liga com (a) organização habilitando e (b) provedor configurado por segredo. Tratado como mensagem de serviço com opt-out (`customer_consents`, purpose `service_notifications`) — base legal a validar com advogado(a). Provedor HTTP no formato Resend, **não testado** contra serviço real; trocar é só implementar `EmailSender`.
+
+## ADR-015 — Fidelidade simples, sem cupons
+Pontos = reais inteiros do total × taxa da organização (0 = desligada), concedidos uma única vez na conclusão; resgate manual atômico. Cupons ficaram fora da Fase 2.
+

@@ -141,12 +141,12 @@ customerRoutes.post("/customers/:id/consents", async (c) => {
   requirePerm(org, "customer.write");
   const cu = await loadCustomer(c.env.DB, org.id, c.req.param("id"));
   if (cu.status === "anonymized") throw new HttpError(409, "anonymized", "Cliente anonimizado");
-  const b = await parseBody(c, z.object({ email: z.boolean().optional(), whatsapp: z.boolean().optional(), granted: z.boolean(), source: z.enum(["staff_recorded", "customer_request"]).default("staff_recorded") }).strict());
+  const b = await parseBody(c, z.object({ email: z.boolean().optional(), whatsapp: z.boolean().optional(), granted: z.boolean(), source: z.enum(["staff_recorded", "customer_request"]).default("staff_recorded"), purpose: z.enum(["marketing", "service_notifications"]).default("marketing") }).strict());
   if (b.email === undefined && b.whatsapp === undefined) throw new HttpError(400, "validation_error", "Informe ao menos um canal");
   const now = isoNow(c.get("deps").now());
   const stmts = [
-    ...consentStmts(c.env.DB, org.id, cu.id, { email: b.email === true, whatsapp: b.whatsapp === true }, b.granted, b.source, now),
-    auditStmt(c.env.DB, { orgId: org.id, actorUserId: c.get("user").id, action: "customer.consent", entity: "customer", entityId: cu.id, details: { granted: b.granted }, now }),
+    ...consentStmts(c.env.DB, org.id, cu.id, { email: b.email === true, whatsapp: b.whatsapp === true }, b.granted, b.source, now, b.purpose),
+    auditStmt(c.env.DB, { orgId: org.id, actorUserId: c.get("user").id, action: "customer.consent", entity: "customer", entityId: cu.id, details: { granted: b.granted, purpose: b.purpose }, now }),
   ];
   await c.env.DB.batch(stmts);
   return c.json({ ok: true }, 201);

@@ -11,6 +11,9 @@ Valores conferidos na documentação oficial durante a Fase 1; **podem mudar** �
 | GitHub Actions | minutos gratuitos (repo público ilimitado) | CI e backup diário |
 | Google Drive | 15 GB da conta | backups criptografados com retenção de 30 dias |
 
+## Fase 2: impacto em escritas do D1
+Concluir um atendimento passa a gravar +1 comissão e (se a fidelidade estiver ligada) +1 lançamento de pontos. O cron de lembretes (a cada 15 min = 96 execuções/dia, 1 dos 5 crons gratuitos) faz 1 leitura de varredura + até 50 inserts + até 20 envios (≤ 20 subrequests) por execução; sem provedor de e-mail configurado ele sai sem consultar nada. Valores estimados, **não medidos**. E-mail transacional não é gratuito ilimitado: conferir o plano gratuito do provedor escolhido.
+
 ## Estimativa honesta
 Uma barbearia média (100 agendamentos/dia) cabe folgadamente. O primeiro gargalo previsível é **escrita no D1** (100 mil/dia) com muitas barbearias; o segundo, a CPU de 10 ms. A saída é o plano pago do Workers (valor a conferir no site da Cloudflare) — decisão sua, não implementada.
 

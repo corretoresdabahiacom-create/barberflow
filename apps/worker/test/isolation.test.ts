@@ -47,10 +47,22 @@ describe("isolamento entre organizações (multi-tenant)", () => {
       ["PATCH", `/customers/${bCustomerId}`, { name: "Hack" }], ["POST", `/customers/${bCustomerId}/consents`, { email: true, granted: true }],
       ["GET", `/customers/${bCustomerId}/export`], ["POST", `/customers/${bCustomerId}/anonymize`],
       ["GET", `/reports/summary?from=${tue(0)}&to=${tue(23)}`], ["GET", "/audit"],
+      // Fase 2
+      ["GET", `/expenses?from=${tue(0)}&to=${tue(23)}`], ["POST", "/expenses", { unitId: B.unitId, category: "Aluguel", amountCents: 100, paidWith: "cash" }],
+      ["POST", "/expenses/qualquer-despesa-existente/reverse", { reason: "teste" }],
+      ["GET", "/cash"], ["POST", "/cash/open", { unitId: B.unitId, openingCents: 0 }], ["POST", "/cash/qualquer-caixa-existente/close", { countedCents: 0 }],
+      ["GET", "/commission-rules"], ["PUT", "/commission-rules", { professionalId: B.proId, rateBp: 100 }], ["DELETE", "/commission-rules/qualquer-regra-existente"],
+      ["GET", `/finance/commissions?from=${tue(0)}&to=${tue(23)}`], ["GET", `/finance/commissions/mine?from=${tue(0)}&to=${tue(23)}`],
+      ["GET", `/finance/summary?from=${tue(0)}&to=${tue(23)}`],
+      ["GET", "/products"], ["POST", "/products", { name: "Hack", priceCents: 1 }], ["PATCH", "/products/qualquer-produto-existente", { priceCents: 1 }],
+      ["POST", "/stock/movements", { unitId: B.unitId, productId: "qualquer-produto-existente", kind: "purchase", qty: 1 }],
+      [ "GET", `/stock/levels?unitId=${B.unitId}`], ["GET", "/stock/movements"],
+      ["GET", "/automation"], ["PUT", "/automation", { loyaltyPointsPerReal: 5 }], ["GET", "/outbox"],
+      ["GET", `/customers/${bCustomerId}/loyalty`], ["POST", `/customers/${bCustomerId}/loyalty/redeem`, { points: 1, note: "xx" }],
     ];
     const failures: string[] = [];
     for (const [method, path, body] of routes) {
-      const r = await api(method, o + path, { token: A.ownerToken, body, headers: method === "POST" && path.endsWith("/payments") ? { "idempotency-key": "chave-de-teste-1" } : {} });
+      const r = await api(method, o + path, { token: A.ownerToken, body, headers: method === "POST" ? { "idempotency-key": "chave-de-teste-1" } : {} });
       if (r.status !== 404) failures.push(`${method} ${path} → ${r.status}`);
     }
     expect(failures, failures.join("\n")).toEqual([]);

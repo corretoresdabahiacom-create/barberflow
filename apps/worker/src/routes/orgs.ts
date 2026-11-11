@@ -12,6 +12,9 @@ import { agendaRoutes } from "./agenda";
 import { customerRoutes } from "./customers";
 import { paymentRoutes } from "./payments";
 import { reportRoutes } from "./reports";
+import { financeRoutes } from "./finance";
+import { stockRoutes } from "./stock";
+import { loyaltyRoutes } from "./loyalty";
 
 export const orgRoutes = new Hono<AppEnv>();
 orgRoutes.use("*", requireAuth);
@@ -295,6 +298,9 @@ scoped.route("/", agendaRoutes);
 scoped.route("/", customerRoutes);
 scoped.route("/", paymentRoutes);
 scoped.route("/", reportRoutes);
+scoped.route("/", financeRoutes);
+scoped.route("/", stockRoutes);
+scoped.route("/", loyaltyRoutes);
 
 orgRoutes.route("/:orgId", scoped);
 

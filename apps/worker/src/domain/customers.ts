@@ -51,6 +51,7 @@ export function consentStmts(
   granted: boolean,
   source: string,
   now: string,
+  purpose: "marketing" | "service_notifications" = "marketing",
 ): D1PreparedStatement[] {
   const rows: D1PreparedStatement[] = [];
   const add = (channel: string) =>
@@ -58,9 +59,9 @@ export function consentStmts(
       db
         .prepare(
           `INSERT INTO customer_consents (id, organization_id, customer_id, purpose, channel, granted, source, created_at)
-           VALUES (?, ?, ?, 'marketing', ?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         )
-        .bind(newId(), orgId, customerId, channel, granted ? 1 : 0, source, now),
+        .bind(newId(), orgId, customerId, purpose, channel, granted ? 1 : 0, source, now),
     );
   if (channels.email) add("email");
   if (channels.whatsapp) add("whatsapp");

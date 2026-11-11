@@ -17,6 +17,8 @@ npx wrangler d1 create naregua-db          # copie o database_id para wrangler.j
 pnpm db:migrate:remote
 npx wrangler secret put TURNSTILE_SECRET_KEY
 ```
+Lembretes por e-mail (opcional, Fase 2): `npx wrangler secret put EMAIL_API_KEY` e definir `EMAIL_FROM` em `vars` (remetente verificado no provedor; o código usa o formato da API do Resend). O cron `*/15 * * * *` já está em `wrangler.jsonc`. Sem esses dois valores o recurso fica inerte. Depois, o proprietário liga em Painel → Automação. **Nunca testado com provedor real.**
+
 Turnstile: dashboard → Turnstile → novo widget (modo gerenciado) → `site key` em `TURNSTILE_SITE_KEY` (wrangler.jsonc vars) **e** `VITE_TURNSTILE_SITE_KEY` (front); `secret key` só via `wrangler secret`.
 
 ## 3. Build e deploy

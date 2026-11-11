@@ -402,6 +402,36 @@ export async function transitionAppointment(p: {
       entityId: appt.id, ip: p.ip, now,
     }),
   ];
+  if (next === "completed") {
+    // Comissão congelada (regra por serviço > regra padrão > 0), arredondada para baixo por item.
+    // Só insere se a transição acima valeu (status = 'completed'); UNIQUE(org, appointment) garante idempotência.
+    stmts.push(
+      db
+        .prepare(
+          `INSERT OR IGNORE INTO commission_entries (id, organization_id, unit_id, appointment_id, professional_id, base_cents, commission_cents, created_at)
+           SELECT ?, a.organization_id, a.unit_id, a.id, a.professional_id,
+                  COALESCE(SUM(i.price_cents), 0),
+                  COALESCE(SUM((i.price_cents * COALESCE(rs.rate_bp, rd.rate_bp, 0)) / 10000), 0), ?
+             FROM appointments a
+             LEFT JOIN appointment_items i ON i.organization_id = a.organization_id AND i.appointment_id = a.id
+             LEFT JOIN commission_rules rs ON rs.organization_id = a.organization_id AND rs.professional_id = a.professional_id AND rs.service_id = i.service_id
+             LEFT JOIN commission_rules rd ON rd.organization_id = a.organization_id AND rd.professional_id = a.professional_id AND rd.service_id IS NULL
+            WHERE a.organization_id = ? AND a.id = ? AND a.status = 'completed'
+            GROUP BY a.id`,
+        )
+        .bind(newId(), now, appt.organization_id, appt.id),
+      // Fidelidade: pontos = reais inteiros do total × pontos/real da organização (0 = desligado).
+      db
+        .prepare(
+          `INSERT OR IGNORE INTO loyalty_ledger (id, organization_id, customer_id, appointment_id, kind, points, note, created_at)
+           SELECT ?, a.organization_id, a.customer_id, a.id, 'earn', (a.total_cents / 100) * o.loyalty_points_per_real, 'Atendimento concluído', ?
+             FROM appointments a JOIN organizations o ON o.id = a.organization_id
+            WHERE a.organization_id = ? AND a.id = ? AND a.status = 'completed'
+              AND o.loyalty_points_per_real > 0 AND (a.total_cents / 100) * o.loyalty_points_per_real > 0`,
+        )
+        .bind(newId(), now, appt.organization_id, appt.id),
+    );
+  }
   if (next === "no_show") {
     stmts.push(
       db

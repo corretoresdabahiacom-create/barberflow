@@ -18,6 +18,7 @@
       "migrations_dir": "migrations"
     }
   ],
+  "triggers": { "crons": ["*/15 * * * *"] },
   "vars": {
     "ENVIRONMENT": "production",
     "APP_NAME": "NaRégua",

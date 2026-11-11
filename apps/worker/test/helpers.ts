@@ -63,12 +63,26 @@ export async function signToken(o: TokenOpts): Promise<string> {
   return `${data}.${b64u(sig)}`;
 }
 
+/** Remetente falso controlável: registra envios e falha sob demanda. */
+export const mailer = {
+  enabled: true,
+  sent: [] as { to: string; subject: string; body: string }[],
+  failWith: null as string | null,
+};
+
 export const testDeps: AppDeps = {
   // MESMO código de verificação de produção; só a fonte das chaves públicas muda.
   verifyToken: async (token) =>
     verifyIdTokenWith(token, PROJECT, async (kid) => (kid === KID ? publicJwk : null), Math.floor(clock.ms / 1000)),
   verifyTurnstile: async (token) => token === "turnstile-ok",
   now: () => new Date(clock.ms),
+  email: {
+    enabled: () => mailer.enabled,
+    send: async (m) => {
+      if (mailer.failWith) throw new Error(mailer.failWith);
+      mailer.sent.push(m);
+    },
+  },
 };
 
 export const app = createApp(testDeps);
@@ -76,6 +90,9 @@ export const E = env as unknown as Env;
 
 export function reset(): void {
   resetRateLimits();
+  mailer.enabled = true;
+  mailer.sent = [];
+  mailer.failWith = null;
   clock.ms = Date.UTC(2026, 10, 6, 15, 0, 0);
 }
 
@@ -172,3 +189,15 @@ export async function adminBook(shop: Shop, startsAt: string, extra: Record<stri
     },
   });
 }
+
+/** Move o relógio para depois do início do atendimento, renova o token do dono e conclui (confirma antes, se preciso). */
+export async function completeAppt(shop: Shop, apptId: string): Promise<Res> {
+  const row = await E.DB.prepare("SELECT starts_at FROM appointments WHERE id = ?").bind(apptId).first<{ starts_at: string }>();
+  clock.ms = Date.parse(row!.starts_at) + 60 * 60_000;
+  shop.ownerToken = await signToken({ uid: shop.ownerUid });
+  await api("POST", `/api/orgs/${shop.orgId}/appointments/${apptId}/confirm`, { token: shop.ownerToken });
+  return api("POST", `/api/orgs/${shop.orgId}/appointments/${apptId}/complete`, { token: shop.ownerToken });
+}
+
+export const apptCustomerId = async (apptId: string): Promise<string> =>
+  (await E.DB.prepare("SELECT customer_id AS c FROM appointments WHERE id = ?").bind(apptId).first<{ c: string }>())!.c;
